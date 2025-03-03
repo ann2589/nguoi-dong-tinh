@@ -1,1 +1,0 @@
-# nguoi-dong-tinh
