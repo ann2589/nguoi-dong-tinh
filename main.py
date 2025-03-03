@@ -86,9 +86,9 @@ flappy_bird = character("Perry-1.png","Perry-2.png","Perry-3.png", 50, HEIGHT//2
 # obstacle2 = obstacle("NTH-realistic.png", WIDTH, HEIGHT - 600, 450, 600)
 # obstacle3 = obstacle("BD.png", WIDTH, HEIGHT - 200, 120, 200)
 # obstacle4 = obstacle("DoPhuQui-realistic.png", WIDTH, HEIGHT - 300, 250, 300)
-# obstacle_list = [obstacle1, obstacle2, obstacle3, obstacle4]
+obstacle_list = []
 
-current_obstacle_list = [obstacle1]
+current_obstacle_list = []
 running = True
 lack_of_obstacle = False
 while running:
