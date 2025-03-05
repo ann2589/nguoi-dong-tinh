@@ -27,7 +27,7 @@ def draw_text(text, font = "ARIAL", color = WHITE, x = WIDTH // 2, y = HEIGHT //
     text_rect = text_surface.get_rect(center=(x, y))
     screen.blit(text_surface, text_rect)
 
-# Các hàm tương tác
+# Các hàm tương tác giữa các đối tượng
 def touched(block_1_hitbox, block_2_hitbox):
     if block_1_hitbox.colliderect(block_2_hitbox):
         return True
@@ -72,7 +72,11 @@ class character:
     # Cắt cảnh game over
     def die_animation(self):
         self.velocity_y = -10
-        
+
+    def is_out_of_map(self):
+        if self.y < 0 or self.y + self.height > HEIGHT:
+            return True
+        return False 
 
 # Class : các cái ống cống
 class obstacle:
@@ -130,9 +134,16 @@ class obstacle:
 def game_playing():
     screen.blit(BACKGROUND, (0, 0))
 
-    lack_of_obstacle = True if current_obstacle_list[0].out_of_range() else False
+    # CHECK CON CHIM CÓ RA NGOÀI MAP KHÔNG?
+    if flappy_bird().is_out_of_map():
+        flappy_bird.die_animation()
+        return "game_over"
 
-    if lack_of_obstacle:
+    # CHECK CÓ TẠO THÊM BLOCK KHÔNG
+    is_needing_obstacle = True if current_obstacle_list[0].is_out_of_range() else False
+
+    # TẠO THÊM ỐNG NẾU CẦN
+    if is_needing_obstacle:
         current_obstacle_list[0].reset()
         current_obstacle_list.pop(0)
         current_obstacle_list.append(random.choice(obstacle_list))
@@ -234,13 +245,14 @@ def game_over():
     return "game_over"
 
 
-# Thực thi game
+# CÁC TRẠNG THÁI CỦA GAME
 states = {
     "menu": game_menu,
     "playing": game_playing,
     "game_over": game_over
 }
 
+# THỰC THI GAME
 current_state = "menu"
 while current_state:
     current_state = states[current_state]()
