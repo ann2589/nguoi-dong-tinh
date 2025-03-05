@@ -25,7 +25,7 @@ COLOR = {
 }
 
 # Các hàm linh tinh
-def draw_text(text, font = FONT["ARIAL"], color = COLOR["WHITE"], x = WIDTH // 2, y = HEIGHT // 2):
+def draw_text(text, font = FONT["ARIAL"], color = COLOR["BLACK"], x = WIDTH // 2, y = HEIGHT // 2):
     """Vẽ chữ lên màn hình"""
     text_surface = font.render(text, True, color)
     text_rect = text_surface.get_rect(center=(x, y))
@@ -149,8 +149,6 @@ def game_playing():
     # TẠO THÊM ỐNG NẾU CẦN
     if is_needing_obstacle:
         current_obstacle_list[0].reset()
-        current_obstacle_list.pop(0)
-        current_obstacle_list.append(random.choice(obstacle_list))
 
     for obstacle in current_obstacle_list:
         obstacle.moving()
@@ -189,10 +187,10 @@ def game_menu():
     flappy_bird = character("Perry-1.png", "Perry-2.png", "Perry-3.png", 100, HEIGHT // 2, 50, 50)
 
     # Tạo obstacles
-    global obstacle_list 
-    obstacle_list = [obstacle(), obstacle(), obstacle()]
+    # global obstacle_list 
+    # obstacle_list = [obstacle(), obstacle(), obstacle()]
     global current_obstacle_list
-    current_obstacle_list = [obstacle_list[0]]
+    current_obstacle_list = [obstacle()]
 
     flappy_bird.print_image(screen)
     
@@ -227,7 +225,8 @@ def game_over():
     for obstacle in current_obstacle_list:
         obstacle.print_image(screen)
 
-    draw_text("GAME OVER")
+    draw_text("GAME OVER", FONT["ARIAL"],  COLOR["BLACK"], WIDTH // 2, HEIGHT // 2 - 100)
+    draw_text("PRESS R TO PLAY AGAIN", FONT["ARIAL"],  COLOR["BLACK"], WIDTH // 2, HEIGHT // 2 + 100)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -235,6 +234,8 @@ def game_over():
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 return ""
+            elif event.key == pygame.K_r:
+                return "menu"
 
     flappy_bird.print_image(screen)
     flappy_bird.moving()
