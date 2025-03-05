@@ -12,16 +12,20 @@ BACKGROUND = pygame.image.load("background-1.PNG")
 BACKGROUND = pygame.transform.scale(BACKGROUND, (WIDTH, HEIGHT))
 
 # FONT
-ARIAL = pygame.font.Font(None, 40) # Font mặc định, size 40
+FONT = {
+    "ARIAL": pygame.font.Font(None, 40) # Font mặc định, size 40
+}
 
 # COLOR
-WHITE = (255,255,255)
-BLACK = (0,0,0)
-RED = (255,0,0)
-GREEN = (0,128,0)
+COLOR = {
+    "WHITE": (255,255,255),
+    "BLACK": (0,0,0),
+    "RED": (255,0,0),
+    "GREEN": (0,128,0)
+}
 
 # Các hàm linh tinh
-def draw_text(text, font = "ARIAL", color = WHITE, x = WIDTH // 2, y = HEIGHT // 2):
+def draw_text(text, font = FONT["ARIAL"], color = COLOR["WHITE"], x = WIDTH // 2, y = HEIGHT // 2):
     """Vẽ chữ lên màn hình"""
     text_surface = font.render(text, True, color)
     text_rect = text_surface.get_rect(center=(x, y))
@@ -100,8 +104,8 @@ class obstacle:
         self.pipe_bottom_rect = pygame.Rect(self.x_bottom, self.y_bottom, self.width_bottom, self.height_bottom)
 
     def print_image(self, screen):
-        pygame.draw.rect(screen, GREEN, self.pipe_top_rect)
-        pygame.draw.rect(screen, GREEN, self.pipe_bottom_rect)
+        pygame.draw.rect(screen, COLOR["GREEN"], self.pipe_top_rect)
+        pygame.draw.rect(screen, COLOR["GREEN"], self.pipe_bottom_rect)
     
     def moving(self):
         self.x_top += self.velocity_x
@@ -124,7 +128,7 @@ class obstacle:
         self.height_bottom = HEIGHT - self.y_bottom
         self.pipe_bottom_rect = pygame.Rect(self.x_bottom, self.y_bottom, self.width_bottom, self.height_bottom)
 
-    def out_of_range(self):
+    def is_out_of_range(self):
         # Check nếu ra ngoài 
         if self.x_top + self.width_top < 0:
             return True
@@ -135,7 +139,7 @@ def game_playing():
     screen.blit(BACKGROUND, (0, 0))
 
     # CHECK CON CHIM CÓ RA NGOÀI MAP KHÔNG?
-    if flappy_bird().is_out_of_map():
+    if flappy_bird.is_out_of_map():
         flappy_bird.die_animation()
         return "game_over"
 
@@ -192,8 +196,8 @@ def game_menu():
 
     flappy_bird.print_image(screen)
     
-    draw_text("FLAPPY BIRD", ARIAL, BLACK, WIDTH // 2, HEIGHT // 2 - 100)
-    draw_text("PRESS SPACE TO PLAY", ARIAL, BLACK, WIDTH // 2, HEIGHT // 2 + 100)
+    draw_text("FLAPPY BIRD", FONT["ARIAL"], COLOR["BLACK"], WIDTH // 2, HEIGHT // 2 - 100)
+    draw_text("PRESS SPACE TO PLAY", FONT["ARIAL"], COLOR["BLACK"], WIDTH // 2, HEIGHT // 2 + 100)
 
     for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -223,7 +227,7 @@ def game_over():
     for obstacle in current_obstacle_list:
         obstacle.print_image(screen)
 
-    draw_text("GAME OVER", ARIAL, WHITE, WIDTH // 2, HEIGHT // 2)
+    draw_text("GAME OVER")
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -231,10 +235,6 @@ def game_over():
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 return ""
-            elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
-                return "menu"
-            elif event.key == pygame.K_DOWN:
-                return "menu"
 
     flappy_bird.print_image(screen)
     flappy_bird.moving()
