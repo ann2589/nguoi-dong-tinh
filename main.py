@@ -1,6 +1,8 @@
 import pygame
 import random
 
+pygame.init()
+
 WIDTH, HEIGHT = 400, 600
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
 pygame.display.set_caption("Perry the platypus")
@@ -12,11 +14,18 @@ BACKGROUND = pygame.transform.scale(BACKGROUND, (WIDTH, HEIGHT))
 # FONT
 ARIAL = pygame.font.Font(None, 40) # Font mặc định, size 40
 
-# Màu sắc
+# COLOR
 WHITE = (255,255,255)
 BLACK = (0,0,0)
 RED = (255,0,0)
 GREEN = (0,128,0)
+
+# Các hàm linh tinh
+def draw_text(text, font = "ARIAL", color = WHITE, x = WIDTH // 2, y = HEIGHT // 2):
+    """Vẽ chữ lên màn hình"""
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect(center=(x, y))
+    screen.blit(text_surface, text_rect)
 
 # Các hàm tương tác
 def touched(block_1_hitbox, block_2_hitbox):
@@ -61,9 +70,7 @@ class character:
         self.velocity_y = self.jump_power
 
     # Cắt cảnh game over
-    def cutscene_gameover(self):
-        global cutscene_is_playing
-        cutscene_is_playing = True
+    def die_animation(self):
         self.velocity_y = -10
         
 
@@ -119,18 +126,8 @@ class obstacle:
             return True
         return False
 
-#  Tạo nhân vật
-flappy_bird = character("Perry-1.png", "Perry-2.png", "Perry-3.png", 100, 100, 50, 50)
-
-# Tạo block
-obstacle_list = [obstacle(), obstacle(), obstacle()]
-current_obstacle_list = [obstacle_list[0]]
-
-# Thực thi game
-running = True
-cutscene_is_playing = False
-lack_of_obstacle = False
-while(running):
+# TRẠNG THÁI ĐANG CHƠI
+def game_playing():
     screen.blit(BACKGROUND, (0, 0))
 
     lack_of_obstacle = True if current_obstacle_list[0].out_of_range() else False
@@ -141,21 +138,20 @@ while(running):
         current_obstacle_list.append(random.choice(obstacle_list))
 
     for obstacle in current_obstacle_list:
-        if not cutscene_is_playing:
-            obstacle.moving()
-            if touched(obstacle.pipe_top_rect, flappy_bird.hitbox) or touched(obstacle.pipe_bottom_rect, flappy_bird.hitbox):
-                flappy_bird.cutscene_gameover()
+        obstacle.moving()
+        if touched(obstacle.pipe_top_rect, flappy_bird.hitbox) or touched(obstacle.pipe_bottom_rect, flappy_bird.hitbox):
+            flappy_bird.die_animation()
+            return "game_over"
         obstacle.print_image(screen)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            return ""
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                running = False
+                return ""
+
             # CÁC THAO TÁC VỀ NHÂN VẬT
-            if cutscene_is_playing:
-                continue
             elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
                 flappy_bird.jumping()
             elif event.key == pygame.K_DOWN:
@@ -166,6 +162,88 @@ while(running):
 
     pygame.display.flip()
     pygame.time.Clock().tick(30) # FPS = 30
+
+    return "playing"
+
+# TRẠNG THÁI MENU
+def game_menu():
+    screen.blit(BACKGROUND, (0, 0))
+
+    # Tạo nhân vật
+    global flappy_bird
+    flappy_bird = character("Perry-1.png", "Perry-2.png", "Perry-3.png", 100, HEIGHT // 2, 50, 50)
+
+    # Tạo obstacles
+    global obstacle_list 
+    obstacle_list = [obstacle(), obstacle(), obstacle()]
+    global current_obstacle_list
+    current_obstacle_list = [obstacle_list[0]]
+
+    flappy_bird.print_image(screen)
+    
+    draw_text("FLAPPY BIRD", ARIAL, BLACK, WIDTH // 2, HEIGHT // 2 - 100)
+    draw_text("PRESS SPACE TO PLAY", ARIAL, BLACK, WIDTH // 2, HEIGHT // 2 + 100)
+
+    for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return ""
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return ""
+
+                # CÁC THAO TÁC VỀ NHÂN VẬT
+                elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
+                    flappy_bird.jumping()
+                    return "playing"
+                elif event.key == pygame.K_DOWN:
+                    flappy_bird.velocity_y = 100
+                    return "playing"
+
+    pygame.display.flip() # Cập nhật màn hình
+    pygame.time.Clock().tick(30) # FPS = 30
+
+    return "menu"
+
+
+# TRẠNG THÁI GAME OVER
+def game_over():
+    screen.blit(BACKGROUND, (0, 0))
+
+    for obstacle in current_obstacle_list:
+        obstacle.print_image(screen)
+
+    draw_text("GAME OVER", ARIAL, WHITE, WIDTH // 2, HEIGHT // 2)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            return ""
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                return ""
+            elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
+                return "menu"
+            elif event.key == pygame.K_DOWN:
+                return "menu"
+
+    flappy_bird.print_image(screen)
+    flappy_bird.moving()
+
+    pygame.display.flip()
+    pygame.time.Clock().tick(30) # FPS = 30
+
+    return "game_over"
+
+
+# Thực thi game
+states = {
+    "menu": game_menu,
+    "playing": game_playing,
+    "game_over": game_over
+}
+
+current_state = "menu"
+while current_state:
+    current_state = states[current_state]()
 
 pygame.quit()
 
