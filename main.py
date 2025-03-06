@@ -7,9 +7,6 @@ WIDTH, HEIGHT = 400, 600
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
 pygame.display.set_caption("Perry the platypus")
 
-# BACKGROUND
-BACKGROUND = pygame.image.load("background-1.PNG")
-BACKGROUND = pygame.transform.scale(BACKGROUND, (WIDTH, HEIGHT))
 
 # FONT
 FONT = {
@@ -64,7 +61,41 @@ def touched(block_1_hitbox, block_2_hitbox):
     if block_1_hitbox.colliderect(block_2_hitbox):
         return True
     return False
-# (WIDTH - 50) // 2, (HEIGHT - 50) // 2, 50, 50
+
+# CLASS: BACKGROUND
+class image:
+    def __init__(self, image_path, x = 0, y = 0, width = WIDTH, height = HEIGHT):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.image = pygame.image.load(image_path)
+        self.image = pygame.transform.scale(self.image, (self.width, self.height))
+
+    def print_image(self):
+        screen.blit(self.image, (self.x, self.y))
+
+class background():
+    def __init__(self):
+        self.velocity_x = -1
+
+        self.background_static = image("background-2-sky.PNG") # PHẦN BACKGROUND ĐỨNG YÊN
+        self.background_roto_1 = image("background-2-buildings.png") # PHẦN BACKGROUND CHUYỂN ĐỘNG LOOP
+        self.background_roto_2 = image("background-2-buildings.png", WIDTH) # PHẦN BACKGROUND CHUYỂN ĐỘNG LOOP
+
+        self.background_roto_list = [self.background_roto_1, self.background_roto_2]
+        
+    def print_image(self):
+        self.background_static.print_image()
+        for frame in self.background_roto_list:
+            frame.print_image()
+
+    def animation(self):
+        for frame in self.background_roto_list:
+            frame.x += self.velocity_x
+            if frame.x + frame.width <= 0:
+                frame.x = WIDTH
+
 # Class: Flappy bird
 class character:
     def __init__(self, image_normal, image_start_sprinting, image_end_sprinting):
@@ -173,7 +204,8 @@ class obstacle:
 # TRẠNG THÁI ĐANG CHƠI
 def game_playing(): 
     global score
-    screen.blit(BACKGROUND, (0, 0)) # IN BACKGROUND
+    BACKGROUND.animation()
+    BACKGROUND.print_image() # IN BACKGROUND
     draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
 
     # CHECK CON CHIM CÓ RA NGOÀI MAP KHÔNG?
@@ -185,7 +217,8 @@ def game_playing():
     is_needing_obstacle = True if current_obstacle_list[0].is_out_of_range() else False # CHECK CÓ TẠO THÊM BLOCK KHÔNG
     if is_needing_obstacle:
         current_obstacle_list[0].reset()
-
+        # current_obstacle_list.append(obstacle())
+ 
     # THEO TÁC VỚI CÁC ỐNG CỐNG
     for obstacle in current_obstacle_list:
         obstacle.moving() # DI CHUYỂN ỐNG
@@ -203,6 +236,8 @@ def game_playing():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return ""
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            flappy_bird.jumping()
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 return ""
@@ -224,7 +259,8 @@ def game_playing():
 
 # TRẠNG THÁI MENU
 def game_menu():
-    screen.blit(BACKGROUND, (0, 0))
+    BACKGROUND.animation()
+    BACKGROUND.print_image()
     
     # RESET CÁC OBSTACLE CHO LƯỢT CHƠI TIẾP THEO
     for obstacle in current_obstacle_list:
@@ -246,6 +282,9 @@ def game_menu():
     for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return ""
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                flappy_bird.jumping()
+                return "playing"
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return ""
@@ -266,7 +305,7 @@ def game_menu():
 
 # TRẠNG THÁI GAME OVER
 def game_over():
-    screen.blit(BACKGROUND, (0, 0))
+    BACKGROUND.print_image()
 
     for obstacle in current_obstacle_list:
         obstacle.print_image(screen)
@@ -308,6 +347,9 @@ states = {
 }
 
 # THỰC THI GAME
+# TẠO BACKGROUND
+BACKGROUND = background()
+
 # Tạo nhân vật
 flappy_bird = character("Perry-1.png", "Perry-2.png", "Perry-3.png")
 
