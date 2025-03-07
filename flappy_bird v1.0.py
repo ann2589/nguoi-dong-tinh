@@ -44,25 +44,27 @@ COLOR = {
     "ROYAL_BLUE": (0, 35, 102)
 }
 
-# Các hàm linh tinh
+# VẼ CHỮ
 def draw_text(text, font = FONT["MARIO_SMALL"], color = COLOR["BLACK"], x = WIDTH // 2, y = HEIGHT // 2):
     """Vẽ chữ lên màn hình"""
     text_surface = font.render(text, True, color)
     text_rect = text_surface.get_rect(center=(x, y))
     screen.blit(text_surface, text_rect)
 
+# KIỂM TRA A CÓ BÊN TRÁI B KHÔNG
 def is_A_to_the_left_of_B(x_a, x_b):
     if x_a < x_b:
         return True
     return False
 
-def init_obstacle_list():
+# TẠO DANH SÁCH CÁC ỐNG CỐNG
+def init_obstacle_list(): 
     global current_obstacle_list, number_of_obstacle
     current_obstacle_list.clear()
     for i in range(number_of_obstacle):
         current_obstacle_list.append(obstacle(WIDTH * 1.5 + (obstacle().pipe_top.width + distance_between_obstacles) * i))
 
-# Các hàm tương tác giữa các đối tượng
+# CHECK VA CHẠM
 def check_collision(a_mask, b_mask, x_a, y_a, x_b, y_b):
     # Lấy vị trí tương đối của player so với ống cống
     offset = (x_a - x_b, y_a - y_b)
@@ -365,15 +367,15 @@ states = {
 # TẠO BACKGROUND
 BACKGROUND = background()
 
-# Tạo nhân vật
+# TẠO NHÂN VẬT
 flappy_bird = character("Perry-1.png", "Perry-2.png", "Perry-3.png")
 
-# Tạo obstacles
+# TẠO ỐNG CỐNG
 current_obstacle_list = []
-distance_between_obstacles = 200 # Khoảng cách giữa các vật
+distance_between_obstacles = 200 # Khoảng cách giữa các ống cống
 number_of_obstacle = 3 # Số lượng vật cản tối đa có thể xuất hiện trên màn hình - 1
 x_reset = distance_between_obstacles * number_of_obstacle + (number_of_obstacle - 1) * obstacle().pipe_top.width  # VỊ TRÍ hoành độ của ống cống spawn lại sau khi bay ra khỏi màn hình
-init_obstacle_list() # TẠO OBSTACLES TRÊN MÀN HÌNH
+init_obstacle_list() # TẠO DANH SÁCH CÁC ỐNG CỐNG
 
 # SCORES
 score = 0
