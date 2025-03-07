@@ -274,8 +274,6 @@ def game_menu():
     score = 0
 
     # ANIMATION CON CHIM Ở MENU
-    if flappy_bird.current_avt.y > HEIGHT + 50: # KHÔNG CHO CHIM BAY QUÁ XA MAP
-        flappy_bird.y = HEIGHT
     flappy_bird.print_image(screen)
     flappy_bird.waiting_animation() # CHIM TỰ ĐỘNG BAY LÊN
     flappy_bird.moving()
@@ -327,7 +325,7 @@ def game_over():
     flappy_bird.moving()
 
     # IN CHỮ    
-    pygame.draw.rect(screen, COLOR["BABY_BLUE"], (100, 230, 200, 140))
+    pygame.draw.rect(screen, COLOR["BABY_BLUE"], (20, 100, 380 - 20, 500 - 100))
     draw_text("GAME OVER", FONT["MARIO_BIG"],  COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 - 100)
     draw_text("PRESS C TO PLAY AGAIN", FONT["MARIO_SMALL"],  COLOR["BLACK"], WIDTH // 2, HEIGHT // 2 + 100)
     draw_text(f"SCORE", FONT["MARIO_SMALL"], COLOR["JUNGLE_GREEN"], WIDTH // 2, HEIGHT // 2 - 45)
@@ -344,6 +342,9 @@ def game_over():
                 return ""
             elif event.key == pygame.K_c:
                 init_obstacle_list() # RESET CÁC ỐNG CỐNG CHO LƯỢT CHƠI TIẾP THEO
+
+                if flappy_bird.current_avt.y > HEIGHT: # RESET VỊ TRÍ CHIM
+                    flappy_bird.current_avt.y = HEIGHT
                 return "menu"
 
 
