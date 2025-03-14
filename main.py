@@ -44,6 +44,13 @@ COLOR = {
     "ROYAL_BLUE": (0, 35, 102)
 }
 
+
+# Cập nhật tốc độ game theo số điểm hiện tại
+def update_game_speed():
+    global game_speed
+    game_speed = game_speed_accel * score + min_game_speed
+    game_speed = min(game_speed, max_game_speed)
+
 # VẼ CHỮ
 def draw_text(text, font = FONT["MARIO_SMALL"], color = COLOR["BLACK"], x = WIDTH // 2, y = HEIGHT // 2):
     """Vẽ chữ lên màn hình"""
@@ -74,9 +81,11 @@ def check_collision(a_mask, b_mask, x_a, y_a, x_b, y_b):
 
 # CLASS: DÀNH CHO CÁC VẬT THỂ LÀ 1 HÌNH ẢNH TRONG GAME
 class obj:
-    def __init__(self, image_path, x = 0, y = 0, width = 0, height = 0):
+    def __init__(self, image_path, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0):
         self.x = x
         self.y = y
+        self.velocity_x = velocity_x
+        self.velocity_y = velocity_y
         self.width = width
         self.height = height
         self.image = pygame.image.load(image_path).convert_alpha()
@@ -89,14 +98,70 @@ class obj:
     def print_image(self, screen):
         screen.blit(self.image, (self.x, self.y))
 
-# CLASS: BACKGROUND
+# CLASS FRONTGROUND: NHỮNG VẬT THỂ MÀ CHIM CÓ THỂ TƯƠNG TÁC (CẦN TẠO MASK)
+    class frontground:
+        def __init__(self, image_path, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0):
+            super().__init__(image_path, x, y, width, height, velocity_x, velocity_y)
+            self.hitbox = pygame.mask.from_surface(self.image)
+        
+        # DI CHUYỂN
+        def move(self):
+            self.x += self.velocity_x * game_speed # di chuyển theo chiều Ox
+            self.y += self.velocity_y * game_speed # di chuyển theo chiều Oy
+
+        # CHECK CÓ RA KHỎI HOÀN TOÀN MAP KHÔNG
+        def is_out_of_the_map(self, right = True, left = True, bottom = True, top = True):
+            if left and self.x + self.width <= 0:
+                return True
+            elif right and self.x >= WIDTH:
+                return True
+            elif top and self.y + self.height <= 0:
+                return True
+            elif bottom and self.y >= HEIGHT:
+                return True
+            return False
+        
+        # CHECK CÓ VA CHẠM RÌA MAP HAY KHÔNG 
+        def is_collided_the_map(self, right = True, left = True, bottom = True, top = True):
+            if left and self.x <= 0:
+                return True
+            elif right and self.x + self.width >= WIDTH:
+                return True
+            elif top and self.y <= 0:
+                return True
+            elif bottom and self.y + self.height >= HEIGHT:
+                return True
+            return False
+        
+        class character:
+            def __init__(self):
+                super().__init__()
+
+# class frontground:
+#     def __init__(self):
+#         self.frame_1 = obj("ground.png", 0, 500, WIDTH, 100)
+#         self.frame_2 = obj("ground.png", WIDTH, 500, WIDTH, 100)
+#         self.frame_list = [self.frame_1, self.frame_2]
+#         self.velocity_x = -5
+
+#     def print_image(self, screen):
+#         for frame in self.frame_list:
+#             frame.print_image(screen)
+
+#     def animate(self):
+#         for frame in self.frame_list:
+#             frame.x += self.velocity_x * game_speed
+#             if frame.x + frame.width <= 0:
+#                 frame.x += frame.width * 2
+
+# CLASS BACKGROUND: NHỮNG VẬT THỂ MÀ CÁC VẬT THỂ FRONTGROUND KHÔNG THỂ TƯƠNG TÁC (KHÔNG CẦN TẠO MASK)
 class background:
     def __init__(self):
         self.velocity_x = -1
 
         self.background_static = obj("background-2-sky.PNG", 0, 0, WIDTH, HEIGHT) # PHẦN BACKGROUND ĐỨNG YÊN
-        self.background_roto_1 = obj("background-2-buildings.png", 0, 0, WIDTH, HEIGHT) # PHẦN BACKGROUND CHUYỂN ĐỘNG LOOP
-        self.background_roto_2 = obj("background-2-buildings.png", WIDTH, 0, WIDTH, HEIGHT) # PHẦN BACKGROUND CHUYỂN ĐỘNG LOOP
+        self.background_roto_1 = obj("background-2-buildings.png", 0, 0, WIDTH, HEIGHT - 100) # PHẦN BACKGROUND CHUYỂN ĐỘNG LOOP
+        self.background_roto_2 = obj("background-2-buildings.png", WIDTH, 0, WIDTH, HEIGHT - 100) # PHẦN BACKGROUND CHUYỂN ĐỘNG LOOP
 
         self.background_roto_list = [self.background_roto_1, self.background_roto_2]
         
@@ -105,11 +170,11 @@ class background:
         for frame in self.background_roto_list:
             frame.print_image(screen)
 
-    def animation(self):
+    def animate(self):
         for frame in self.background_roto_list:
-            frame.x += self.velocity_x
+            frame.x += self.velocity_x * game_speed
             if frame.x + frame.width <= 0:
-                frame.x = WIDTH
+                frame.x += frame.width * 2
 
 # Class: Flappy bird
 class character:
@@ -134,9 +199,8 @@ class character:
 
     def moving(self): # Di chuyển (cập nhật vị trí)
         self.velocity_y = min(self.velocity_y + self.gravity, 10) # trọng lực ảnh hưởng đến tốc độ di chuyển theo trục Oy
-        self.current_avt.x += self.velocity_x # di chuyển theo chiều Ox
-        self.current_avt.y += self.velocity_y # di chuyển theo chiều Oy
-        self.hitbox = pygame.mask.from_surface(self.current_avt.image)
+        self.current_avt.x += self.velocity_x * game_speed # di chuyển theo chiều Ox
+        self.current_avt.y += self.velocity_y * game_speed # di chuyển theo chiều Oy
 
     def jumping(self):
         self.velocity_y = self.jump_power
@@ -163,9 +227,9 @@ class obstacle:
            '''
 
         # chỉ số chung
-        self.velocity_x = -5
         self.distance_gap = 150
         self.is_scored = False # Đã được tính điểm hay chưa
+        self.velocity_x = -5
 
         self.width = width
         self.height = height
@@ -176,8 +240,8 @@ class obstacle:
         self.pipe_top.print_image(screen)
 
     def moving(self):
-        self.pipe_top.x += self.velocity_x
-        self.pipe_bottom.x += self.velocity_x
+        self.pipe_top.x += self.velocity_x * game_speed
+        self.pipe_bottom.x += self.velocity_x * game_speed
 
     # KHỞI TẠO CHỈ SỐ CỦA CÁC ỐNG CỐNG
     def init_obstacle(self, x_reset):
@@ -198,13 +262,13 @@ class obstacle:
             return True
         return False
 
-# TRẠNG THÁI ĐANG CHƠI
-def game_playing(): 
+# TRẠNG THÁI ĐANG CHƠI MODE EASY
+def game_playing_easy(): 
     # LIÊN KẾT SCORE GLOBAL ĐỂ CẬP NHẬT BIẾN BEST SCORE KHI GAME OVER
     global score
 
     # IN BACKGROUND
-    BACKGROUND.animation()
+    BACKGROUND.animate()
     BACKGROUND.print_image(screen) 
 
     # IN CHIM
@@ -238,6 +302,10 @@ def game_playing():
 
         obstacle.print_image(screen) # IN ỐNG CỐNG
 
+    # IN FRONTGROUND
+    FRONTGROUND.animate()
+    FRONTGROUND.print_image(screen)
+
     # IN ĐIỂM
     draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
 
@@ -257,18 +325,158 @@ def game_playing():
             elif event.key == pygame.K_DOWN:
                 flappy_bird.velocity_y = 100
 
+    pygame.display.flip()
+    pygame.time.Clock().tick(30) # FPS = 30
 
+    return "game_playing_easy"
+
+# TRẠNG THÁI ĐANG CHƠI MODE NORMAL
+def game_playing_normal():
+    # UPDATE GAME SPEED
+    update_game_speed()
+
+    # LIÊN KẾT SCORE GLOBAL ĐỂ CẬP NHẬT BIẾN BEST SCORE KHI GAME OVER
+    global score
+
+    # IN BACKGROUND
+    BACKGROUND.animate()
+    BACKGROUND.print_image(screen) 
+
+    # IN CHIM
+    flappy_bird.print_image(screen)
+    flappy_bird.moving()
+
+    # CHECK CON CHIM CÓ RA NGOÀI MAP KHÔNG?
+    if flappy_bird.is_out_of_map():
+        flappy_bird.die_animation()
+        return "game_over"
+
+    # THAO TÁC VỚI CÁC ỐNG CỐNG
+    for obstacle in current_obstacle_list:
+        obstacle.moving() # DI CHUYỂN ỐNG
+
+        if obstacle.is_out_of_range(): # RESET VỊ TRÍ CỦA OBSTACLE
+            obstacle.init_obstacle(x_reset)
+
+        # check va chạm ống trên
+        if check_collision(obstacle.hitbox_top, flappy_bird.hitbox, obstacle.pipe_top.x, obstacle.pipe_top.y, flappy_bird.current_avt.x, flappy_bird.current_avt.y):
+            flappy_bird.die_animation()
+            return "game_over"
+        # check va chạm ống dưới
+        if check_collision(obstacle.hitbox_bottom, flappy_bird.hitbox, obstacle.pipe_bottom.x, obstacle.pipe_bottom.y, flappy_bird.current_avt.x, flappy_bird.current_avt.y):
+            flappy_bird.die_animation()
+            return "game_over"
+        
+        if is_A_to_the_left_of_B(obstacle.pipe_top.x, flappy_bird.current_avt.x) and not obstacle.is_scored: # CHECK ĐIỂM
+            score +=1
+            obstacle.is_scored = True
+
+        obstacle.print_image(screen) # IN ỐNG CỐNG
+
+    # FRONTGROUND
+    FRONTGROUND.animate()
+    FRONTGROUND.print_image(screen)
+
+    # IN ĐIỂM
+    draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
+
+    # CHECK THAO TÁC
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            return ""
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            flappy_bird.jumping()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                return ""
+
+            # CÁC THAO TÁC VỀ NHÂN VẬT
+            elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
+                flappy_bird.jumping()
+            elif event.key == pygame.K_DOWN:
+                flappy_bird.velocity_y = 100
 
     pygame.display.flip()
     pygame.time.Clock().tick(30) # FPS = 30
 
-    return "playing"
+    return "game_playing_normal"
 
+#  TRẠNG THÁI ĐANG CHƠI MODE HARD
+def game_playing_hard():
+    # UPDATE GAME SPEED
+    update_game_speed()
+
+    # LIÊN KẾT SCORE GLOBAL ĐỂ CẬP NHẬT BIẾN BEST SCORE KHI GAME OVER
+    global score
+
+    # IN BACKGROUND
+    BACKGROUND.animate()
+    BACKGROUND.print_image(screen) 
+
+    # IN CHIM
+    flappy_bird.print_image(screen)
+    flappy_bird.moving()
+
+    # CHECK CON CHIM CÓ RA NGOÀI MAP KHÔNG?
+    if flappy_bird.is_out_of_map():
+        flappy_bird.die_animation()
+        return "game_over"
+
+    # THAO TÁC GIỮA CHIM VỚI CÁC ỐNG CỐNG
+    for obstacle in current_obstacle_list:
+        obstacle.moving() # DI CHUYỂN ỐNG
+
+        if obstacle.is_out_of_range(): # RESET VỊ TRÍ CỦA OBSTACLE
+            obstacle.init_obstacle(x_reset)
+
+        # check va chạm ống trên
+        if check_collision(obstacle.hitbox_top, flappy_bird.hitbox, obstacle.pipe_top.x, obstacle.pipe_top.y, flappy_bird.current_avt.x, flappy_bird.current_avt.y):
+            flappy_bird.die_animation()
+            return "game_over"
+        # check va chạm ống dưới
+        if check_collision(obstacle.hitbox_bottom, flappy_bird.hitbox, obstacle.pipe_bottom.x, obstacle.pipe_bottom.y, flappy_bird.current_avt.x, flappy_bird.current_avt.y):
+            flappy_bird.die_animation()
+            return "game_over"
+        
+        if is_A_to_the_left_of_B(obstacle.pipe_top.x, flappy_bird.current_avt.x) and not obstacle.is_scored: # CHECK ĐIỂM
+            score +=1
+            obstacle.is_scored = True
+
+        obstacle.print_image(screen) # IN ỐNG CỐNG
+
+    # THAO TÁC GIỮA CHIM VỚI FRONTGROUND
+
+    FRONTGROUND.animate()
+    FRONTGROUND.print_image(screen)
+
+    # IN ĐIỂM
+    draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
+
+    # CHECK THAO TÁC
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            return ""
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            flappy_bird.jumping()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                return ""
+
+            # CÁC THAO TÁC VỀ NHÂN VẬT
+            elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
+                flappy_bird.jumping()
+            elif event.key == pygame.K_DOWN:
+                flappy_bird.velocity_y = 100
+
+    pygame.display.flip()
+    pygame.time.Clock().tick(30) # FPS = 30
+
+    return "game_playing_hard"
 
 # TRẠNG THÁI MENU
 def game_menu():
     # BACKGROUND LOOP
-    BACKGROUND.animation()
+    BACKGROUND.animate()
     BACKGROUND.print_image(screen)
     
     # SET ĐIỂM
@@ -280,6 +488,10 @@ def game_menu():
     flappy_bird.waiting_animation() # CHIM TỰ ĐỘNG BAY LÊN
     flappy_bird.moving()
      
+    # FRONTGROUND
+    FRONTGROUND.animate()
+    FRONTGROUND.print_image(screen)
+
     # CHỮ MENU
     draw_text("FLAPPY BIRD", FONT["MARIO_BIG"], COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 - 100)
     draw_text("PRESS SPACE TO PLAY", FONT["MARIO_SMALL"], COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 + 100)
@@ -290,7 +502,7 @@ def game_menu():
                 return ""
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 flappy_bird.jumping()
-                return "playing"
+                return "game_playing_hard"
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return ""
@@ -298,10 +510,10 @@ def game_menu():
                 # CÁC THAO TÁC VỀ NHÂN VẬT
                 elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
                     flappy_bird.jumping()
-                    return "playing"
+                    return "game_playing_easy"
                 elif event.key == pygame.K_DOWN:
                     flappy_bird.velocity_y = 100
-                    return "playing"
+                    return "game_playing_easy"
 
     pygame.display.flip() # Cập nhật màn hình
     pygame.time.Clock().tick(30) # FPS = 30
@@ -325,6 +537,9 @@ def game_over():
     # CHIM BỰ
     flappy_bird.print_image(screen)
     flappy_bird.moving()
+
+    # FRONTGROUND
+    FRONTGROUND.print_image(screen)
 
     # IN CHỮ    
     pygame.draw.rect(screen, COLOR["BABY_BLUE"], (20, 100, 380 - 20, 500 - 100))
@@ -360,9 +575,14 @@ def game_over():
 # CÁC TRẠNG THÁI CỦA GAME
 states = {
     "menu": game_menu,
-    "playing": game_playing,
+    "game_playing_hard": game_playing_hard,
+    "game_playing_normal": game_playing_normal,
+    "game_playing_easy": game_playing_easy,
     "game_over": game_over
 }
+
+# TẠO FRONTGROUND
+FRONTGROUND = frontground()
 
 # TẠO BACKGROUND
 BACKGROUND = background()
@@ -376,6 +596,13 @@ distance_between_obstacles = 200 # Khoảng cách giữa các ống cống
 number_of_obstacle = 3 # Số lượng vật cản tối đa có thể xuất hiện trên màn hình - 1
 x_reset = distance_between_obstacles * number_of_obstacle + (number_of_obstacle - 1) * obstacle().pipe_top.width  # VỊ TRÍ hoành độ của ống cống spawn lại sau khi bay ra khỏi màn hình
 init_obstacle_list() # TẠO DANH SÁCH CÁC ỐNG CỐNG
+
+# TỐC ĐỘ GAME
+game_speed = 1 # khởi đầu là 1x
+score_at_max_game_speed = 100 # Điểm dừng tăng tiến tốc độ game
+max_game_speed = 3 # Tốc độ game tối đa
+min_game_speed = 1 # Tốc độ game ban đầu
+game_speed_accel = (max_game_speed - min_game_speed) / score_at_max_game_speed # gia tốc của tốc độ game => gia tốc của vận tốc x
 
 # SCORES
 score = 0
