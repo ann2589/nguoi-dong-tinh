@@ -301,12 +301,17 @@ def game_playing_easy():
     pygame.mixer.music.play()
     
     while True:
+        if score >= 20:
+            update_game_speed(game_speed)
         for background in background_list: # IN BACKGROUND
             background.move()
             background.print_image(screen)
             
             if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
                 background.reset_position()
+
+        if score >= 69:
+            sexy_girl.print_image(screen)
 
         for obstacle in obstacle_list: # IN OBSTACLE
             obstacle.move()
@@ -391,6 +396,9 @@ def game_playing_normal():
             if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
                 background.reset_position()
 
+        if score >= 69:
+            sexy_girl.print_image(screen)
+
         for obstacle in obstacle_list: # IN OBSTACLE
             obstacle.move()
             obstacle.print_image(screen)
@@ -473,6 +481,9 @@ def game_playing_hard():
             
             if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
                 background.reset_position()
+
+        if score >= 69:
+            sexy_girl.print_image(screen)
 
         for obstacle in obstacle_list: # IN OBSTACLE
             obstacle.move()
@@ -736,6 +747,9 @@ def game_over():
 
 # TẠO NHẠC NỀN
 pygame.mixer.music.load(soundtrack_1)
+
+# SOAB
+sexy_girl = background(sexy_girl_image, 0, 0, WIDTH, HEIGHT, 0, 0)
 
 # THÔNG SỐ NHÂN VẬT
 character_width = 50
