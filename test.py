@@ -619,14 +619,14 @@ def game_menu():
     
     hint = random.choice(RANDOM_HINT)
 
-    if current_game_mode == "game_playing_easy" and score >= 20: # tăng độ khó khi đạt đủ score
+    if current_game_mode == "game_playing_hardcore":
+        current_game_mode = "game_playing_easy"
+    elif score >= 119:
+        return "game_playing_hardcore"
+    elif current_game_mode == "game_playing_easy" and score >= 20: # tăng độ khó khi đạt đủ score
         current_game_mode = "game_playing_normal"
         hint = "score 50 for cow girls"
     elif current_game_mode == "game_playing_normal" and score >= 50:
-        current_game_mode = "game_playing_hard"
-    elif score >= 119:
-        return "game_playing_hardcore"
-    elif current_game_mode == "game_playing_hardcore":
         current_game_mode = "game_playing_hard"
 
     score = 0 # reset score
