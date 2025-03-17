@@ -46,16 +46,20 @@ background_roto_image = os.path.join(base_dir, "assets", "backgrounds", "backgro
 # fonts
 mario_font = os.path.join(base_dir, "assets", "fonts", "TypefaceMarioWorldPixelFilledRegular-rgVMx.ttf")
 
+# Menu
+menu_game_over_image = os.path.join(base_dir, "assets", "menu", "menu-game-over.png")
+
 # random files
 sexy_girl_image = os.path.join(base_dir, "assets", "easter eggs", "sexy.png")
 
 RANDOM_HINT = [
     "Press down-but to have a long dic-",
     "Right mouse for a long dic-",
-    "Score 69 for a sexy",
-    "Score 119 for a surprise",
+    "Score 20 for a sexy",
+    "Score 30 for a surprise",
     "Press 2 for 200 points",
-    "score 20 = faster game speed",
+    "Why if press 1",
+    "score 10 = faster game speed",
 ]
 
 FONT = {
@@ -300,8 +304,6 @@ def game_playing_easy():
     pygame.mixer.music.play()
     
     while True:
-        if score >= 20:
-            game_speed = update_game_speed()
         for background in background_list: # IN BACKGROUND
             background.move()
             background.print_image(screen)
@@ -309,8 +311,9 @@ def game_playing_easy():
             if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
                 background.reset_position()
 
-        if score >= 69:
-            sexy_girl.print_image(screen)
+        if score >= normal_mode_score_requirement:
+            current_game_mode = "game_playing_normal"
+            return current_game_mode
 
         for obstacle in obstacle_list: # IN OBSTACLE
             obstacle.move()
@@ -395,8 +398,9 @@ def game_playing_normal():
             if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
                 background.reset_position()
 
-        if score >= 69:
-            sexy_girl.print_image(screen)
+        if score >= hard_mode_score_requirement:
+            current_game_mode = "game_playing_hard"
+            return current_game_mode
 
         for obstacle in obstacle_list: # IN OBSTACLE
             obstacle.move()
@@ -481,8 +485,9 @@ def game_playing_hard():
             if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
                 background.reset_position()
 
-        if score >= 69:
-            sexy_girl.print_image(screen)
+        if score > hardcore_mode_score_requirement:
+            current_game_mode = "game_playing_hardcore"
+            return current_game_mode
 
         for obstacle in obstacle_list: # IN OBSTACLE
             obstacle.move()
@@ -631,12 +636,12 @@ def game_menu():
 
     if current_game_mode == "game_playing_hardcore":
         current_game_mode = "game_playing_easy"
-    elif score >= 119:
+    elif score >= hardcore_mode_score_requirement:
         return "game_playing_hardcore"
-    elif current_game_mode == "game_playing_easy" and score >= 20: # tăng độ khó khi đạt đủ score
+    elif current_game_mode == "game_playing_easy" and score >= normal_mode_score_requirement: # tăng độ khó khi đạt đủ score
         current_game_mode = "game_playing_normal"
         hint = "score 50 for cow girls"
-    elif current_game_mode == "game_playing_normal" and score >= 50:
+    elif current_game_mode == "game_playing_normal" and score >= hard_mode_score_requirement:
         current_game_mode = "game_playing_hard"
 
     score = 0 # reset score
@@ -720,13 +725,9 @@ def game_over():
         current_character.move() # Cập nhật vị trí
         current_character.print_image(screen) # IN CHARACTER
 
-        pygame.draw.rect(screen, COLOR["BABY_BLUE"], (20, 100, 380 - 20, 500 - 100)) # IN CHỮ
-        draw_text("GAME OVER", FONT["MARIO_BIG"],  COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 - 100)
-        draw_text("Press space to play again", FONT["MARIO_SMALL"],  COLOR["BLACK"], WIDTH // 2, HEIGHT // 2 + 100)
-        draw_text(f"SCORE", FONT["MARIO_SMALL"], COLOR["JUNGLE_GREEN"], WIDTH // 2, HEIGHT // 2 - 45)
-        draw_text(f"{score}", FONT["MARIO_SMALL"],  COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 15)
-        draw_text(f"BEST SCORE", FONT["MARIO_SMALL"],  COLOR["JUNGLE_GREEN"], WIDTH // 2, HEIGHT // 2 + 15)
-        draw_text(f"{best_score}", FONT["MARIO_SMALL"],  COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 + 45)
+        menu_game_over.print_image(screen)
+        draw_text(f"{score}", FONT["MARIO_BIG"],  COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 - 40)
+        draw_text(f"{best_score}", FONT["MARIO_BIG"],  COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 + 70)
 
         for event in pygame.event.get(): # CHECK THAO TÁC
             if event.type == pygame.QUIT:
@@ -749,6 +750,14 @@ pygame.mixer.music.load(soundtrack_1)
 
 # SOAB
 sexy_girl = background(sexy_girl_image, 0, 0, WIDTH, HEIGHT, 0, 0)
+
+# Menu
+menu_game_over = background(menu_game_over_image, 0, 0, WIDTH, HEIGHT)
+
+# ĐIỂM SỐ GIỮA CÁC MODE
+normal_mode_score_requirement = 10
+hard_mode_score_requirement = 20
+hardcore_mode_score_requirement = 119
 
 # THÔNG SỐ NHÂN VẬT
 character_width = 50
