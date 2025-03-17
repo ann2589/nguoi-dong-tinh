@@ -141,8 +141,8 @@ class frontground(obj): # FRONTGROUND: LÀ VẬT MÀ CHIM CÓ THỂ TƯƠNG TÁC
 class character(frontground): # NHẬT VẬT: FLAPPY BIRD
     def __init__(self, normal_image, start_jumping_image, is_jumping_image, is_collecting_image, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0):
         super().__init__(normal_image, x, y, width, height, velocity_x, velocity_y)
-        self.gravity = 1 # gia tốc trọng trường
-        self.jump_power = -10 # v[0]
+        self.gravity = 1.2 # gia tốc trọng trường
+        self.jump_power = -12 # v[0]
         self.normal_image = normal_image
         self.start_jumping_image = start_jumping_image
         self.is_jumping_image = is_jumping_image
@@ -762,7 +762,7 @@ is_collecting = False
 
 # THÔNG SỐ CỦA OBSTACLE
 x_first_spawn = WIDTH * 1.5
-distance_gap = 120 # Khoảng cách giữa 2 ống cống trên dưới
+distance_gap = 150 # Khoảng cách giữa 2 ống cống trên dưới
 obstacle_width = 60 
 obstacle_height = 500 
 obstacle_velocity_x = -5 # TỐC ĐỘ DI CHUYỂN CỦA ỐNG CỐNG
@@ -797,7 +797,7 @@ init_obj(ground_list, obstacle_list, coin_list, background_list)
 game_speed = 1 # khởi đầu là 1x
 score_at_max_game_speed = 100 # Điểm dừng tăng tiến tốc độ game
 min_game_speed = 1 # Tốc độ game ban đầu
-max_game_speed = 2 # Tốc độ game tối đa
+max_game_speed = 1.5 # Tốc độ game tối đa
 game_speed_accel = (max_game_speed - min_game_speed) / score_at_max_game_speed # gia tốc của tốc độ game => gia tốc của vận tốc theo hoành độ
 
 # SCORES
