@@ -174,7 +174,7 @@ class character(frontground): # NHẬT VẬT: FLAPPY BIRD
             self.image = pygame.transform.rotate(self.image, 0)
 
     def update_velocity(self): # UPDATE VẬN TỐC THEO GRAVITY
-        self.velocity_y += self.gravity
+        self.velocity_y += self.gravity * self.game_speed
 
     def reset_position(self):
         self.x = character_x
