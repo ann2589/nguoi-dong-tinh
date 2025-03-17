@@ -55,7 +55,7 @@ RANDOM_HINT = [
     "Score 69 for a sexy",
     "Score 119 for a surprise",
     "Press 2 for 200 points",
-    "score 20 = faster game speed"
+    "score 20 = faster game speed",
 ]
 
 FONT = {
@@ -142,7 +142,7 @@ class character(frontground): # NHẬT VẬT: FLAPPY BIRD
     def __init__(self, normal_image, start_jumping_image, is_jumping_image, is_collecting_image, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0):
         super().__init__(normal_image, x, y, width, height, velocity_x, velocity_y)
         self.gravity = 1 # gia tốc trọng trường
-        self.jump_power = -12 # v[0]
+        self.jump_power = -10 # v[0]
         self.normal_image = normal_image
         self.start_jumping_image = start_jumping_image
         self.is_jumping_image = is_jumping_image
@@ -174,7 +174,7 @@ class character(frontground): # NHẬT VẬT: FLAPPY BIRD
             self.image = pygame.transform.rotate(self.image, 0)
 
     def update_velocity(self): # UPDATE VẬN TỐC THEO GRAVITY
-        self.velocity_y += self.gravity * self.game_speed
+        self.velocity_y += self.gravity * game_speed
 
     def reset_position(self):
         self.x = character_x
@@ -762,7 +762,7 @@ is_collecting = False
 
 # THÔNG SỐ CỦA OBSTACLE
 x_first_spawn = WIDTH * 1.5
-distance_gap = 150 # Khoảng cách giữa 2 ống cống trên dưới
+distance_gap = 120 # Khoảng cách giữa 2 ống cống trên dưới
 obstacle_width = 60 
 obstacle_height = 500 
 obstacle_velocity_x = -5 # TỐC ĐỘ DI CHUYỂN CỦA ỐNG CỐNG
