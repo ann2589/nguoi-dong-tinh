@@ -232,9 +232,8 @@ def random_coin_position(): # Vị trí random của coin giữa 2 obstacles
     x_position_cap = distance_between_obstacles - coin_width # Vị trí coin.x tối đa  
     return random.uniform(0.2 * x_position_cap, 0.8 * x_position_cap)
 
-def update_game_speed(game_speed): # Cập nhật tốc độ game theo số điểm hiện tại (tỉ lệ thuận)
-    game_speed = game_speed_accel * score + min_game_speed
-    game_speed = min(game_speed, max_game_speed)
+def update_game_speed(): # Cập nhật tốc độ game theo số điểm hiện tại (tỉ lệ thuận)
+    return min(game_speed_accel * score + min_game_speed, max_game_speed)
 
 def draw_text(text = "Hello, world!", font = FONT["MARIO_SMALL"], color = COLOR["BLACK"], x = WIDTH // 2, y = HEIGHT // 2): # VẼ CHỮ
     """Vẽ chữ lên màn hình"""
@@ -296,13 +295,13 @@ def init_obj(ground_list = False, obstacle_list = False, coin_list = False, back
         init_background_list(background_list)
 
 def game_playing_easy():
-    global score, is_collecting # liên kết score => cập nhật best_score
+    global score, is_collecting, game_speed # liên kết score => cập nhật best_score
     y_top, y_bottom = 0, 0
     pygame.mixer.music.play()
     
     while True:
         if score >= 20:
-            update_game_speed(game_speed)
+            game_speed = update_game_speed()
         for background in background_list: # IN BACKGROUND
             background.move()
             background.print_image(screen)
@@ -382,12 +381,12 @@ def game_playing_easy():
         pygame.time.Clock().tick(30) # FPS = 30
 
 def game_playing_normal():
-    global score, is_collecting # liên kết score => cập nhật best_score
+    global score, is_collecting, game_speed # liên kết score => cập nhật best_score
     y_top, y_bottom = 0, 0
     pygame.mixer.music.play()
     
     while True:
-        update_game_speed(game_speed) # Tặng tốc game dần theo score
+        game_speed = update_game_speed() # Tặng tốc game dần theo score
 
         for background in background_list: # IN BACKGROUND
             background.move()
@@ -468,12 +467,12 @@ def game_playing_normal():
         pygame.time.Clock().tick(30) # FPS = 30
 
 def game_playing_hard():
-    global number_of_coin, score, is_collecting, is_lack_of_coin # liên kết score => cập nhật best_score
+    global number_of_coin, score, is_collecting, is_lack_of_coin, game_speed # liên kết score => cập nhật best_score
     y_top, y_bottom = 0, 0
     pygame.mixer.music.play()
     
     while True:
-        update_game_speed(game_speed) # Tặng tốc game dần theo score
+        game_speed = update_game_speed() # Tặng tốc game dần theo score
 
         for background in background_list: # IN BACKGROUND
             background.move()
@@ -764,7 +763,7 @@ is_collecting = False
 # THÔNG SỐ CỦA OBSTACLE
 x_first_spawn = WIDTH * 1.5
 distance_gap = 150 # Khoảng cách giữa 2 ống cống trên dưới
-obstacle_width = 60
+obstacle_width = 60 
 obstacle_height = 500 
 obstacle_velocity_x = -5 # TỐC ĐỘ DI CHUYỂN CỦA ỐNG CỐNG
 distance_between_obstacles = 200 # Khoảng cách giữa 2 chướng ngại vật
@@ -796,9 +795,9 @@ init_obj(ground_list, obstacle_list, coin_list, background_list)
 
 # TỐC ĐỘ GAME
 game_speed = 1 # khởi đầu là 1x
-score_at_max_game_speed = 50 # Điểm dừng tăng tiến tốc độ game
+score_at_max_game_speed = 100 # Điểm dừng tăng tiến tốc độ game
 min_game_speed = 1 # Tốc độ game ban đầu
-max_game_speed = 3 # Tốc độ game tối đa
+max_game_speed = 2 # Tốc độ game tối đa
 game_speed_accel = (max_game_speed - min_game_speed) / score_at_max_game_speed # gia tốc của tốc độ game => gia tốc của vận tốc theo hoành độ
 
 # SCORES
