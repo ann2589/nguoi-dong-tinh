@@ -156,6 +156,11 @@ class character(frontground): # NHẬT VẬT: FLAPPY BIRD
         self.x = character_x
         self.y = character_y
 
+    def move(self, is_collecting = False):
+        self.update_velocity()
+        self.update_frame(is_collecting)
+        super().move()
+
 class coins(frontground): # NHỮNG VẬT CHARACTER CÓ THỂ THU THẬP: BÒ
     def __init__(self, image_path, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0):
         super().__init__(image_path, x, y, width, height, velocity_x, velocity_y)
@@ -293,10 +298,8 @@ def game_playing_hard():
             current_character.die()
             return "game_over"
 
+        current_character.move(is_collecting) # Cập nhật vị trí
         current_character.print_image(screen) # IN CHARACTER
-        current_character.update_velocity() # Cập nhật vận tốc (chịu ảnh hưởng bởi trọng lực)
-        current_character.update_frame(is_collecting) # Cập nhật frame
-        current_character.move() # Cập nhật vị trí
 
         draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
 
@@ -319,7 +322,6 @@ def game_playing_hard():
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_DOWN:
                     is_collecting = False
-                    # pygame.mixer.Sound.fadeout(collecting_sound, 5)
 
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
         pygame.time.Clock().tick(30) # FPS = 30
@@ -346,11 +348,9 @@ def game_menu():
         if current_character.is_out_of_the_map(): # RESET VỊ TRÍ CHIM
             current_character.y = HEIGHT // 2
 
-        current_character.print_image(screen) # IN CHARACTER
-        current_character.update_velocity() # Cập nhật vận tốc (chịu ảnh hưởng bởi trọng lực)
-        current_character.update_frame() # Cập nhật frame
         current_character.move() # Cập nhật vị trí
         current_character.act_at_menu() # animation ở menu
+        current_character.print_image(screen) # IN CHARACTER
 
         draw_text("FLAPPY BIRD", FONT["MARIO_BIG"], COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 - 100) # IN CHỮ Ở MENU
         draw_text("PRESS SPACE TO PLAY", FONT["MARIO_SMALL"], COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 + 100)
@@ -400,10 +400,8 @@ def game_over():
         for frame in ground_list: # IN GROUND
             frame.print_image(screen)
 
-        current_character.print_image(screen) # IN CHARACTER
-        current_character.update_velocity() # Cập nhật vận tốc (chịu ảnh hưởng bởi trọng lực)
-        current_character.update_frame() # Cập nhật frame
         current_character.move() # Cập nhật vị trí
+        current_character.print_image(screen) # IN CHARACTER
 
         pygame.draw.rect(screen, COLOR["BABY_BLUE"], (20, 100, 380 - 20, 500 - 100)) # IN CHỮ
         draw_text("GAME OVER", FONT["MARIO_BIG"],  COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 - 100)
