@@ -7,6 +7,9 @@ WIDTH, HEIGHT = 400, 600
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
 pygame.display.set_caption("Perry the platypus")
 
+# FPS
+FPS = 30
+
 # LIÊN KẾT FILE / FOLDER
 base_dir = os.path.dirname(__file__) # Lấy đường dẫn đến thư mục chứa script này
 
@@ -21,9 +24,11 @@ plane_sound = pygame.mixer.Sound(os.path.join(base_dir, "assets", "sounds", "pla
 
 # Character 1 - perry ufo
 char_perry_ufo_normal_image = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-1.png")
-char_perry_ufo_is_jumping_image = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-2.png")
-char_perry_ufo_start_jumping_image = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-3.png")
-char_perry_ufo_is_collecting_image = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-4.png")
+char_perry_ufo_jump_image_2 = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-2.png")
+char_perry_ufo_jump_image_1 = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-3.png")
+char_perry_ufo_collecting_image_1 = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-beam-1.png")
+char_perry_ufo_collecting_image_2 = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-beam-2.png")
+char_perry_ufo_collecting_image_3 = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-beam-3.png")
 
 # Character 2 - perry plane
 char_perry_plane_normal_image = os.path.join(base_dir, "assets", "characters", "perry_plane", "perry-plane-1.png")
@@ -51,16 +56,6 @@ menu_game_over_image = os.path.join(base_dir, "assets", "menu", "menu-game-over.
 
 # random files
 sexy_girl_image = os.path.join(base_dir, "assets", "easter eggs", "sexy.png")
-
-RANDOM_HINT = [
-    "Press down-but to have a long dic-",
-    "Right mouse for a long dic-",
-    "Score 20 for a sexy",
-    "Score 30 for a surprise",
-    "Press 2 for 200 points",
-    "Why if press 1",
-    "score 10 = faster game speed",
-]
 
 FONT = {
     "ARIAL": pygame.font.Font(None, 40), # Font mặc định, size 40
@@ -108,6 +103,12 @@ class obj: # MỘT VẬT THỂ TRONG GAME
         self.height = self.image.get_height() if height == 0 else height  # Nếu có kích thước tuỳ chỉnh thì theo, không thì kích thước như file ban đầu
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
+    def reset_image(self, image_path, width = 0, height = 0): # Reset ảnh của obj
+        self.image = pygame.image.load(image_path).convert_alpha()
+        self.width = self.image.get_width() if width == 0 else width
+        self.height = self.image.get_height() if height == 0 else height
+        self.image = pygame.transform.scale(self.image, (self.width, self.height))
+
     def print_image(self, screen):
         screen.blit(self.image, (self.x, self.y))
     
@@ -143,15 +144,23 @@ class frontground(obj): # FRONTGROUND: LÀ VẬT MÀ CHIM CÓ THỂ TƯƠNG TÁC
         self.hitbox = pygame.mask.from_surface(self.image)
 
 class character(frontground): # NHẬT VẬT: FLAPPY BIRD
-    def __init__(self, normal_image, start_jumping_image, is_jumping_image, is_collecting_image, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0):
+    def __init__(self, normal_image, jump_image_1, jump_image_2, collecting_image_1, collecting_image_2, collecting_image_3, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0, jump_power = 0, gravity = 0, beam_time_1 = 0, beam_time_2 = 0, beam_time_3 = 0):
         super().__init__(normal_image, x, y, width, height, velocity_x, velocity_y)
-        self.gravity = 1.2 # gia tốc trọng trường
-        self.jump_power = -12 # v[0]
+        self.gravity = gravity # gia tốc trọng trường
+        self.jump_power = jump_power # v[0]
         self.normal_image = normal_image
-        self.start_jumping_image = start_jumping_image
-        self.is_jumping_image = is_jumping_image
-        self.is_collecting_image = is_collecting_image # image lúc hút bò
-        self.collecting_range = pygame.mask.from_surface(pygame.image.load(self.is_collecting_image))
+        self.jump_image_1 = jump_image_1
+        self.jump_image_2 = jump_image_2
+        self.collecting_image_1 = collecting_image_1
+        self.collecting_image_2 = collecting_image_2 
+        self.collecting_image_3 = collecting_image_3 
+        self.collecting_range = pygame.mask.from_surface(pygame.image.load(self.collecting_image_2)) # hitbox của beam
+        self.is_collecting = False # đang sử dụng beam hay không
+        self.beam_time = 0 # thời gian sử dụng beam
+        self.beam_time_1 = beam_time_1 # Thời gian hết frame nhân vật đang nạp đạn (milisecond) từ lúc bấm nút
+        self.beam_time_2 = beam_time_2 # Thời gian hết frame nhân vật đang bắn (milisecond) từ lúc bấm nút
+        self.beam_time_3 = beam_time_3 # Thời gian hết frame đạn tan rã (milisecond) từ lúc bấm nút
+
 
     def jump(self): # THAO TÁC NHẢY
         pygame.mixer.Sound.play(jumping_sound)
@@ -164,18 +173,23 @@ class character(frontground): # NHẬT VẬT: FLAPPY BIRD
         if self.y > HEIGHT // 2:
             self.jump()
 
-    def update_image(self, is_collecting = False): # CẬP NHẬT image THEO TỐC ĐỘ
-        if is_collecting:
-            self.image = pygame.image.load(self.is_collecting_image)
+    def update_image(self): # CẬP NHẬT image THEO TỐC ĐỘ
+        if self.is_collecting:
+            if self.beam_time < self.beam_time_1:
+                self.image = pygame.image.load(self.collecting_image_1)
+            elif self.beam_time < self.beam_time_2:
+                self.image = pygame.image.load(self.collecting_image_2)
+            elif self.beam_time < self.beam_time_3:
+                self.image = pygame.image.load(self.collecting_image_3)
+            else:
+                self.is_collecting = False
+                self.image = pygame.image.load(self.normal_image)
         elif self.velocity_y < self.jump_power // 2:
-            self.image = pygame.image.load(self.start_jumping_image)
-            self.image = pygame.transform.rotate(self.image, 0)
+            self.image = pygame.image.load(self.jump_image_1)
         elif self.velocity_y < 0:
-            self.image = pygame.image.load(self.is_jumping_image)
-            self.image = pygame.transform.rotate(self.image, 0)
+            self.image = pygame.image.load(self.jump_image_2)
         else:
             self.image = pygame.image.load(self.normal_image)
-            self.image = pygame.transform.rotate(self.image, 0)
 
     def update_velocity(self): # UPDATE VẬN TỐC THEO GRAVITY
         self.velocity_y += self.gravity * game_speed
@@ -184,20 +198,59 @@ class character(frontground): # NHẬT VẬT: FLAPPY BIRD
         self.x = character_x
         self.y = character_y
 
-    def move(self, is_collecting = False):
+    def is_shoting(self):
+        return self.is_collecting and self.beam_time < self.beam_time_2 and self.beam_time >= self.beam_time_1
+
+    def update_beam_time(self):
+        if not self.is_collecting:
+            self.beam_time = 0
+        else:
+            self.beam_time += miliseconds_per_frame * game_speed
+
+    def move(self):
         self.update_velocity()
-        self.update_image(is_collecting)
+        self.update_beam_time()
+        self.update_image()
         super().move()
 
 class coin(frontground): # NHỮNG VẬT CHARACTER CÓ THỂ THU THẬP: BÒ
-    def __init__(self, image_path, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0):
+    def __init__(self, image_path, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0, coin_accel_y_when_it_is_disappearing = 0, coin_angular_velocity_when_it_is_disappearing = 0, coin_accel_width_when_it_is_disappearing = 0, coin_accel_height_when_it_is_disappearing = 0):
         super().__init__(image_path, x, y, width, height, velocity_x, velocity_y)
+        self.image_path = image_path
         self.is_scored = False
+        self.coin_accel_y_when_it_is_disappearing = coin_accel_y_when_it_is_disappearing
+        self.coin_angular_velocity_when_it_is_disappearing = coin_angular_velocity_when_it_is_disappearing
+        self.coin_accel_width_when_it_is_disappearing = coin_accel_width_when_it_is_disappearing
+        self.coin_accel_height_when_it_is_disappearing = coin_accel_height_when_it_is_disappearing
+        self.velocity_width = 0
+        self.velocity_height = 0
+        self.original_width = self.width
+        self.original_height = self.height
 
     def reset_position(self, x, y):
         self.is_scored = False
         self.x = x
         self.y = y
+        self.width = self.original_width
+        self.height = self.original_height
+        self.velocity_y = 0
+        self.velocity_height = 0
+        self.velocity_width = 0
+        self.reset_image(self.image_path, self.original_width, self.original_height)
+
+    def disappear(self):
+        self.velocity_y += self.coin_accel_y_when_it_is_disappearing
+        self.velocity_width += self.coin_accel_width_when_it_is_disappearing
+        self.velocity_height += self.coin_accel_height_when_it_is_disappearing
+        self.width = max(self.velocity_width + self.width, 0)
+        self.height = max(self.velocity_height + self.height, 0)
+        self.image = pygame.transform.rotate(self.image, self.coin_angular_velocity_when_it_is_disappearing)
+        self.image = pygame.transform.scale(self.image, (self.width, self.height))
+
+    def move(self):
+        if self.is_scored:
+            self.disappear()
+        super().move()
 
 class obstacle(frontground): # CHƯỚNG NGẠI VẬT: ỐNG CỐNG
     def __init__(self, image_path, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0, give_score = False):
@@ -227,7 +280,7 @@ class background(obj): # BACKGROUND: LÀ VẬT MÀ CHIM KHÔNG THỂ TƯƠNG TÁ
     def reset_position(self): # Khởi tạo lại vị trí
         self.x += self.width * 2 # x2 để xuất hiện ngay sau image ảnh thứ 2
 
-def random_obstacle_height():
+def random_obstacle_height(): # Random vị trí của 2 cái ống trên và dưới
     y_top = random.uniform(- (obstacle_height - 0.15 * HEIGHT), - (obstacle_height - 0.45 * HEIGHT)) # ống cống trên dài từ 15% - 45% màn
     y_bottom = y_top + obstacle_height + distance_gap # ống cống dưới cách ống trên một khoảng = distance_gap
     return (y_top, y_bottom)
@@ -254,8 +307,8 @@ def is_collided(a_x, a_y, a_hitbox, b_x, b_y, b_hitbox): # KIỂM TRA VA CHẠM 
     offset = (a_x - b_x, a_y - b_y) # Lấy vị trí tương đối của player so với ống cống
     return b_hitbox.overlap(a_hitbox, offset) is not None # True = có va chạm
 
-def init_character(normal_image, start_jumping_image, is_jumping_image, is_collecting_image):
-    return character(normal_image, start_jumping_image, is_jumping_image, is_collecting_image, character_x, character_y, character_width, character_height)
+def init_character(normal_image, jump_image_1, jump_image_2, collecting_image_1, colecting_image_2, collecting_image_3):
+    return character(normal_image, jump_image_1, jump_image_2, collecting_image_1, colecting_image_2, collecting_image_3, character_x, character_y, character_width, character_height, 0, 0, jump_power, gravity, beam_time_1, beam_time_2, beam_time_3)
     
 def init_ground_list(my_list): # TẠO image LIST CỦA MẶT ĐẤT
     my_list.clear()
@@ -278,7 +331,7 @@ def init_coin_list(my_list):# TẠO DANH SÁCH COIN: Bò
     
     for i in range(number_of_coin): # tạo danh sách coin
         coin_x = random_coin_position() + x_first_spawn + obstacle_width + (obstacle_width + distance_between_obstacles) * i
-        my_list.insert(0, coin(coin_image_1, coin_x, coin_y_when_it_resets_position, coin_width, coin_height, coin_velocity_x))
+        my_list.insert(0, coin(coin_image_1, coin_x, coin_y_when_it_resets_position, coin_width, coin_height, coin_velocity_x, 0, coin_accel_y_when_it_is_disappearing, coin_angular_velocity_when_it_is_disappearing, coin_accel_width_when_it_is_disappearing, coin_accel_height_when_it_is_disappearing))
 
 def init_background_list(my_list): # TẠO DANH SÁCH image PHẦN BACKGROUND
     my_list.clear()
@@ -288,7 +341,7 @@ def init_background_list(my_list): # TẠO DANH SÁCH image PHẦN BACKGROUND
     background_roto2 = background(background_roto_image, WIDTH, 0, WIDTH, HEIGHT - ground_height, background_velocity_x) # Phần background loop image 2
     my_list[:] = [background_stato, background_roto1, background_roto2]
 
-def init_obj(ground_list = False, obstacle_list = False, coin_list = False, background_list = False):
+def init_obj(ground_list = False, obstacle_list = False, coin_list = False, background_list = False): # TẠO DANH SÁCH image obj
     if type(ground_list) == list:
         init_ground_list(ground_list)
     if type(obstacle_list) == list: 
@@ -299,7 +352,7 @@ def init_obj(ground_list = False, obstacle_list = False, coin_list = False, back
         init_background_list(background_list)
 
 def game_playing_easy():
-    global score, is_collecting, game_speed # liên kết score => cập nhật best_score
+    global score, game_speed # liên kết score => cập nhật best_score
     y_top, y_bottom = 0, 0
     pygame.mixer.music.play()
     
@@ -322,6 +375,7 @@ def game_playing_easy():
             if obstacle.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ngoài map
                 if obstacle.give_score: # Nếu ống trên
                     obstacle.reset_position(obstacle_x_when_it_resets_position, y_top) # vị trí ống trên
+
                 else:
                     (y_top, y_bottom) = random_obstacle_height() # thì random chiều cao cho cặp ống trên dưới mới này
                     obstacle.reset_position(obstacle_x_when_it_resets_position, y_bottom) # vị trí ống dưới
@@ -346,7 +400,7 @@ def game_playing_easy():
             current_character.die()
             return "game_over"
 
-        current_character.move(is_collecting) # Cập nhật vị trí
+        current_character.move() # Cập nhật vị trí
         current_character.print_image(screen) # IN CHARACTER
 
         draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
@@ -357,34 +411,30 @@ def game_playing_easy():
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # chuột trái
-                    is_collecting = False
                     current_character.jump()
+
                 elif event.button == 3: # chuột phải
-                    is_collecting = True
+                    if not current_character.is_collecting:
+                        current_character.is_collecting = True
+                        pygame.mixer.Sound.play(collecting_sound)
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return ""
+                
                 elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
-                    is_collecting = False
                     current_character.jump()
+
                 elif event.key == pygame.K_DOWN:
-                    is_collecting = True
-                    pygame.mixer.Sound.play(collecting_sound)
-
-            elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_DOWN:
-                    is_collecting = False
-
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 3:
-                    is_collecting = False
+                    if not current_character.is_collecting:
+                        current_character.is_collecting = True
+                        pygame.mixer.Sound.play(collecting_sound)
 
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
-        pygame.time.Clock().tick(30) # FPS = 30
+        pygame.time.Clock().tick(FPS)
 
 def game_playing_normal():
-    global score, is_collecting, game_speed # liên kết score => cập nhật best_score
+    global score, game_speed # liên kết score => cập nhật best_score
     y_top, y_bottom = 0, 0
     pygame.mixer.music.play()
     
@@ -409,6 +459,7 @@ def game_playing_normal():
             if obstacle.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ngoài map
                 if obstacle.give_score: # Nếu ống trên
                     obstacle.reset_position(obstacle_x_when_it_resets_position, y_top) # vị trí ống trên
+
                 else:
                     (y_top, y_bottom) = random_obstacle_height() # thì random chiều cao cho cặp ống trên dưới mới này
                     obstacle.reset_position(obstacle_x_when_it_resets_position, y_bottom) # vị trí ống dưới
@@ -433,7 +484,7 @@ def game_playing_normal():
             current_character.die()
             return "game_over"
 
-        current_character.move(is_collecting) # Cập nhật vị trí
+        current_character.move() # Cập nhật vị trí
         current_character.print_image(screen) # IN CHARACTER
 
         draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
@@ -444,37 +495,35 @@ def game_playing_normal():
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # chuột trái
-                    is_collecting = False
                     current_character.jump()
+
                 elif event.button == 3: # chuột phải
-                    is_collecting = True
+                    if not current_character.is_collecting:
+                        current_character.is_collecting = True
+                        pygame.mixer.Sound.play(collecting_sound)
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return ""
+                
                 elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
-                    is_collecting = False
                     current_character.jump()
+
                 elif event.key == pygame.K_DOWN:
-                    is_collecting = True
-                    pygame.mixer.Sound.play(collecting_sound)
-
-            elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_DOWN:
-                    is_collecting = False
-
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 3:
-                    is_collecting = False
+                    if not current_character.is_collecting:
+                        current_character.is_collecting = True
+                        pygame.mixer.Sound.play(collecting_sound)
 
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
-        pygame.time.Clock().tick(30) # FPS = 30
-
+        pygame.time.Clock().tick(FPS)
+ 
 def game_playing_hard():
-    global number_of_coin, score, is_collecting, is_lack_of_coin, game_speed # liên kết score => cập nhật best_score
+    global score, game_speed# liên kết score => cập nhật best_score
     y_top, y_bottom = 0, 0
+    is_lack_of_coin = False
+
     pygame.mixer.music.play()
-    
+
     while True:
         game_speed = update_game_speed() # Tặng tốc game dần theo score
 
@@ -494,12 +543,14 @@ def game_playing_hard():
             obstacle.print_image(screen)
             
             if obstacle.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ngoài map
-                if is_lack_of_coin:
+                if is_lack_of_coin: # Cập nhật lại vị trí coin nếu nó bị nhặt / mất (vị trí ở ngay giữa 2 obstacles)
                     coin_x = random_coin_position() + obstacle_x_when_it_resets_position + obstacle_width
                     is_lack_of_coin = False
                     the_coin_that_need_to_be_reset_position.reset_position(coin_x, coin_y_when_it_resets_position)
+                
                 if obstacle.give_score: # Nếu ống trên
                     obstacle.reset_position(obstacle_x_when_it_resets_position, y_top) # vị trí ống trên
+                
                 else:
                     (y_top, y_bottom) = random_obstacle_height() # thì random chiều cao cho cặp ống trên dưới mới này
                     obstacle.reset_position(obstacle_x_when_it_resets_position, y_bottom) # vị trí ống dưới
@@ -523,8 +574,8 @@ def game_playing_hard():
         if current_character.is_collided_with_the_map(False, False, True, True): # CHECK GAME OVER KHI CHIM BAY NGOÀI MAP
             current_character.die()
             return "game_over"
-
-        current_character.move(is_collecting) # Cập nhật vị trí
+       
+        current_character.move() # Cập nhật vị trí
         current_character.print_image(screen) # IN CHARACTER
 
         for coin in coin_list:
@@ -535,8 +586,9 @@ def game_playing_hard():
                 is_lack_of_coin = True
                 the_coin_that_need_to_be_reset_position = coin
                 
-            if not coin.is_scored and is_collided(coin.x, coin.y, coin.hitbox, current_character.x, current_character.y, current_character.collecting_range):
+            if current_character.is_shoting() and not coin.is_scored and is_collided(coin.x, coin.y, coin.hitbox, current_character.x, current_character.y, current_character.collecting_range):
                 coin.is_scored = True
+                is_lack_of_coin = True
                 the_coin_that_need_to_be_reset_position = coin
                 pygame.mixer.Sound.play(cow_sound)
                 score += 1
@@ -553,31 +605,27 @@ def game_playing_hard():
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # chuột trái
-                    is_collecting = False
                     current_character.jump()
+
                 elif event.button == 3: # chuột phải
-                    is_collecting = True
+                    if not current_character.is_collecting:
+                        current_character.is_collecting = True
+                        pygame.mixer.Sound.play(collecting_sound)
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return ""
+                
                 elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
-                    is_collecting = False
                     current_character.jump()
+
                 elif event.key == pygame.K_DOWN:
-                    is_collecting = True
-                    pygame.mixer.Sound.play(collecting_sound)
-
-            elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_DOWN:
-                    is_collecting = False
-
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 3:
-                    is_collecting = False
+                    if not current_character.is_collecting:
+                        current_character.is_collecting = True
+                        pygame.mixer.Sound.play(collecting_sound)
 
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
-        pygame.time.Clock().tick(30) # FPS = 30
+        pygame.time.Clock().tick(FPS)
 
 def game_playing_hardcore():
     global number_of_coin, score, is_collecting, is_lack_of_coin # liên kết score => cập nhật best_score
@@ -623,7 +671,7 @@ def game_playing_hardcore():
                     return ""
                 
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
-        pygame.time.Clock().tick(30) # FPS = 30
+        pygame.time.Clock().tick(FPS)
 
 def game_menu():
     global score, game_speed, is_collecting, is_lack_of_coin, current_game_mode
@@ -704,13 +752,14 @@ def game_menu():
                     is_collecting = False
 
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
-        pygame.time.Clock().tick(30) # FPS = 30
+        pygame.time.Clock().tick(FPS)
 
 def game_over():
     global best_score, score, game_speed, current_character # liên kết score => cập nhật best_score; game_speed
     best_score = max(score, best_score)
 
     pygame.mixer.Sound.play(game_over_sound)
+    pygame.mixer.music.fadeout(2000)
 
     while True:
         for background in background_list: # IN BACKGROUND
@@ -741,9 +790,12 @@ def game_over():
                     return "game_menu"
 
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
-        pygame.time.Clock().tick(30) # FPS = 30
+        pygame.time.Clock().tick(FPS)
 
 '''DƯỚI ĐÂY LÀ CÁC THÔNG SỐ CÓ THỂ ĐƯỢC TUỲ CHỈNH SAO CHO PHÙ HỢP VỚI NGƯỜI CHƠI'''
+
+# miliseconds per frame
+miliseconds_per_frame = 1000 / FPS
 
 # TẠO NHẠC NỀN
 pygame.mixer.music.load(soundtrack_1)
@@ -754,19 +806,19 @@ sexy_girl = background(sexy_girl_image, 0, 0, WIDTH, HEIGHT, 0, 0)
 # Menu
 menu_game_over = background(menu_game_over_image, 0, 0, WIDTH, HEIGHT)
 
-# ĐIỂM SỐ GIỮA CÁC MODE
-normal_mode_score_requirement = 10
-hard_mode_score_requirement = 20
-hardcore_mode_score_requirement = 119
-
 # THÔNG SỐ NHÂN VẬT
 character_width = 50
 character_height = 50
 character_x = (WIDTH - 200) // 2
 character_y = (HEIGHT - 50) // 2
+jump_power = -12
+gravity = 1.2
+beam_time_1 = 300 # Thời gian hết frame nhân vật đang nạp đạn (milisecond) từ lúc bấm nút
+beam_time_2 = 600 # Thời gian hết frame nhân vật đang bắn (milisecond) từ lúc bấm nút
+beam_time_3 = 700 # Thời gian hết frame đạn tan rã (milisecond) từ lúc bấm nút
 
 # TẠO NHÂN VẬT
-current_character = init_character(char_perry_ufo_normal_image, char_perry_ufo_start_jumping_image, char_perry_ufo_is_jumping_image, char_perry_ufo_is_collecting_image)
+current_character = init_character(char_perry_ufo_normal_image, char_perry_ufo_jump_image_1, char_perry_ufo_jump_image_2, char_perry_ufo_collecting_image_1, char_perry_ufo_collecting_image_2, char_perry_ufo_collecting_image_3)
 is_collecting = False
 
 # THÔNG SỐ CỦA OBSTACLE
@@ -785,12 +837,17 @@ ground_height = 100
 ground_velocity_x = obstacle_velocity_x
 
 # THÔNG SỐ COINS: CON BÒ
-number_of_coin = 1 # Số lượng coin tối đa có thể xuất hiện trên màn hình = number_of_coin
+number_of_coin = 2 # Số lượng coin tối đa có thể xuất hiện trên màn hình = number_of_coin
 coin_width = 70
-coin_height = coin_width / 39 * 27
+coin_height = coin_width / 39 * 27 # tỉ lệ ảnh coin (nhân chéo chia ngang)
 coin_y_when_it_resets_position = HEIGHT - coin_height - ground_height # vị trí theo chiều Ox là random và dựa theo obstacle nên không có ở đây
 coin_velocity_x = obstacle_velocity_x
-is_lack_of_coin = True
+coin_dissapear_time = 2000 # Thời gian mà coin biến mất sau khi được nhặt
+coin_max_height_when_it_is_disappearing = -100 # chiều cao bay lên tối đa của coin khi nó biến mất
+coin_angular_velocity_when_it_is_disappearing = 15 # Tốc độ quay của coin khi bị nhặt (omega)
+coin_accel_y_when_it_is_disappearing = 2 * coin_max_height_when_it_is_disappearing / miliseconds_per_frame / miliseconds_per_frame # gia tốc của coin khi nó biến mất (pixel / frame)
+coin_accel_width_when_it_is_disappearing = 2 * -coin_width / miliseconds_per_frame / miliseconds_per_frame # Tốc độ co lại width của coin khi bị nhặt
+coin_accel_height_when_it_is_disappearing = 2 * -coin_height / miliseconds_per_frame / miliseconds_per_frame # Tốc độ co lại height của coin khi bị nhặt
 
 # THÔNG SỐ BACKGROUND
 background_velocity_x = -1
@@ -812,6 +869,21 @@ game_speed_accel = (max_game_speed - min_game_speed) / score_at_max_game_speed #
 # SCORES
 score = 0
 best_score = 0
+
+# ĐIỂM SỐ GIỮA CÁC MODE
+normal_mode_score_requirement = 1
+hard_mode_score_requirement = 2
+hardcore_mode_score_requirement = 119
+
+RANDOM_HINT = [
+    "Press down-but to have a long dic-",
+    "Right mouse for a long dic-",
+    f"Score 69 for a sexy",
+    f"Score {hard_mode_score_requirement} for a surprise",
+    f"score {normal_mode_score_requirement} = faster game speed",
+    "Press 2 for 200 points",
+    "Why if press 1",
+]
 
 # CÁC TRẠNG THÁI CỦA GAME
 states = {
