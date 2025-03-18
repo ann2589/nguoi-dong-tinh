@@ -7,7 +7,7 @@ WIDTH, HEIGHT = 400, 600
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
 pygame.display.set_caption("Perry the platypus")
 
-# FPS
+# FPS 
 FPS = 30
 
 # LIÊN KẾT FILE / FOLDER
@@ -21,6 +21,7 @@ game_over_sound = pygame.mixer.Sound(os.path.join(base_dir, "assets", "sounds", 
 collecting_sound = pygame.mixer.Sound(os.path.join(base_dir, "assets", "sounds", "ufo", "ufo-1.mp3"))
 cow_sound = pygame.mixer.Sound(os.path.join(base_dir, "assets", "sounds", "cows", "bokhongluoi-1.mp3"))
 plane_sound = pygame.mixer.Sound(os.path.join(base_dir, "assets", "sounds", "planes", "planecrashdiectai.mp3"))
+bomb_sound = pygame.mixer.Sound(os.path.join(base_dir, "assets", "sounds", "planes", "planecrashnormal.mp3"))
 
 # Character 1 - perry ufo
 char_perry_ufo_normal_image = os.path.join(base_dir, "assets", "characters", "perry_ufo", "perry-1.png")
@@ -32,6 +33,13 @@ char_perry_ufo_collecting_image_3 = os.path.join(base_dir, "assets", "characters
 
 # Character 2 - perry plane
 char_perry_plane_normal_image = os.path.join(base_dir, "assets", "characters", "perry_plane", "perry-plane-1.png")
+
+# Character - story
+nguyen_thanh_hung_image = os.path.join(base_dir, "assets", "characters", "story", "nguyen-thanh-hung.png")
+ba_duy_image = os.path.join(base_dir, "assets", "characters", "story", "ba-duy.png")
+dam_vinh_hung_image = os.path.join(base_dir, "assets", "characters", "story", "dam-vinh-hung.png")
+do_phu_qui_image = os.path.join(base_dir, "assets", "characters", "story", "do-phu-qui.png")
+j97_image = os.path.join(base_dir, "assets", "characters", "story", "j97.png")
 
 # Grounds
 ground_image = os.path.join(base_dir, "assets", "grounds", "ground.png")
@@ -50,6 +58,9 @@ background_roto_image = os.path.join(base_dir, "assets", "backgrounds", "backgro
 
 # fonts
 mario_font = os.path.join(base_dir, "assets", "fonts", "TypefaceMarioWorldPixelFilledRegular-rgVMx.ttf")
+montserrat_font = os.path.join(base_dir, "assets", "fonts", "Montserrat-Regular.ttf")
+montserrat_font_bold = os.path.join(base_dir, "assets", "fonts", "Montserrat-Bold.ttf")
+montserrat_font_italic = os.path.join(base_dir, "assets", "fonts", "Montserrat-Italic.ttf")
 
 # Menu
 menu_game_over_image = os.path.join(base_dir, "assets", "menu", "menu-game-over.png")
@@ -60,7 +71,10 @@ sexy_girl_image = os.path.join(base_dir, "assets", "easter eggs", "sexy.png")
 FONT = {
     "ARIAL": pygame.font.Font(None, 40), # Font mặc định, size 40
     "MARIO_BIG": pygame.font.Font(mario_font, 25),
-    "MARIO_SMALL": pygame.font.Font(mario_font, 15)
+    "MARIO_SMALL": pygame.font.Font(mario_font, 15),
+    "MONTESRRAT_REGULAR": pygame.font.Font(montserrat_font, 15),
+    "MONTESRRAT_BOLD": pygame.font.Font(montserrat_font_bold, 15),
+    "MONTESRRAT_ITALIC": pygame.font.Font(montserrat_font_italic, 15)
 }
 
 COLOR = {
@@ -137,6 +151,13 @@ class obj: # MỘT VẬT THỂ TRONG GAME
     def move(self): # DI CHUYỂN
         self.x += self.velocity_x * game_speed # di chuyển theo chiều Ox
         self.y += self.velocity_y * game_speed # di chuyển theo chiều Oy
+
+class story_character(obj):
+    def __init__(self, name = None, image_path = None, dialogue = "", font = FONT["MONTESRRAT_REGULAR"], x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0):
+        super().__init__(image_path, x, y, width, height, velocity_x, velocity_y)
+        self.name = name
+        self.dialogue = dialogue
+        self.font = font
 
 class frontground(obj): # FRONTGROUND: LÀ VẬT MÀ CHIM CÓ THỂ TƯƠNG TÁC VA CHẠM (CẦN TẠO MASK)
     def __init__(self, image_path, x = 0, y = 0, width = 0, height = 0, velocity_x = 0, velocity_y = 0):
@@ -280,6 +301,24 @@ class background(obj): # BACKGROUND: LÀ VẬT MÀ CHIM KHÔNG THỂ TƯƠNG TÁ
     def reset_position(self): # Khởi tạo lại vị trí
         self.x += self.width * 2 # x2 để xuất hiện ngay sau image ảnh thứ 2
 
+def draw_dialogue_box(obj): # HỘP THOẠI HIỆN THỊ HỘI THOẠI
+    obj.print_image(screen)
+
+    pygame.draw.rect(screen, COLOR["ROYAL_BLUE"], (dialogue_box_x, dialogue_box_y, dialogue_box_width, dialogue_box_height))  # Vẽ hộp thoại
+    pygame.draw.rect(screen, COLOR["WHITE"], (dialogue_box_x, dialogue_box_y, dialogue_box_width, dialogue_box_height), 3)  # Viền hộp thoại
+    
+    character_text = obj.font.render(obj.name + ":", True, COLOR["WHITE"])
+    screen.blit(character_text, (dialogue_x, dialogue_y))
+
+    # Xử lý văn bản xuống dòng
+    lines = wrap_text(obj.dialogue, obj.font)
+    
+    y_offset = dialogue_y + 40  # Vị trí hiển thị dòng đầu tiên
+    for line in lines:
+        line_render = obj.font.render(line, True, COLOR["WHITE"])
+        screen.blit(line_render, (60, y_offset))
+        y_offset += 30  # Khoảng cách giữa các dòng
+
 def random_obstacle_height(): # Random vị trí của 2 cái ống trên và dưới
     y_top = random.uniform(- (obstacle_height - 0.15 * HEIGHT), - (obstacle_height - 0.45 * HEIGHT)) # ống cống trên dài từ 15% - 45% màn
     y_bottom = y_top + obstacle_height + distance_gap # ống cống dưới cách ống trên một khoảng = distance_gap
@@ -298,6 +337,22 @@ def draw_text(text = "Hello, world!", font = FONT["MARIO_SMALL"], color = COLOR[
     text_rect = text_surface.get_rect(center=(x, y))
     screen.blit(text_surface, text_rect)
 
+def wrap_text(text = "Hello, world!", font = FONT["MONTESRRAT_REGULAR"]):
+    words = text.split()  # Tách từng từ
+    lines = []
+    current_line = ""
+
+    for word in words:
+        test_line = current_line + word + " "
+        if font.size(test_line)[0] <= dialogue_max_width:
+            current_line = test_line
+        else:
+            lines.append(current_line)  # Xuống dòng
+            current_line = word + " "
+
+    lines.append(current_line)  # Thêm dòng cuối cùng
+    return lines
+
 def is_A_to_the_left_of_B(x_a, x_b): # KIỂM TRA A CÓ BÊN TRÁI B KHÔNG
     if x_a < x_b:
         return True
@@ -307,7 +362,7 @@ def is_collided(a_x, a_y, a_hitbox, b_x, b_y, b_hitbox): # KIỂM TRA VA CHẠM 
     offset = (a_x - b_x, a_y - b_y) # Lấy vị trí tương đối của player so với ống cống
     return b_hitbox.overlap(a_hitbox, offset) is not None # True = có va chạm
 
-def init_character(normal_image, jump_image_1, jump_image_2, collecting_image_1, colecting_image_2, collecting_image_3):
+def init_character(normal_image, jump_image_1 = None, jump_image_2 = None, collecting_image_1 = None, colecting_image_2 = None, collecting_image_3 = None):
     return character(normal_image, jump_image_1, jump_image_2, collecting_image_1, colecting_image_2, collecting_image_3, character_x, character_y, character_width, character_height, 0, 0, jump_power, gravity, beam_time_1, beam_time_2, beam_time_3)
     
 def init_ground_list(my_list): # TẠO image LIST CỦA MẶT ĐẤT
@@ -350,6 +405,9 @@ def init_obj(ground_list = False, obstacle_list = False, coin_list = False, back
         init_coin_list(coin_list)
     if type(background_list) == list:
         init_background_list(background_list)
+
+def init_story_character(name = "world", image_path = None, dialogue = "Hello, world!", font = FONT["MONTESRRAT_REGULAR"]): # TẠO NHÂN VẬT TRONG STORY
+    return story_character(name, image_path, dialogue, font, story_character_x, story_character_y, story_character_width, story_character_height, 0, 0)
 
 def game_playing_easy():
     global score, game_speed # liên kết score => cập nhật best_score
@@ -434,10 +492,31 @@ def game_playing_easy():
         pygame.time.Clock().tick(FPS)
 
 def game_playing_normal():
-    global score, game_speed # liên kết score => cập nhật best_score
+    global score, game_speed, first_time_playing_normal # liên kết score => cập nhật best_score
     y_top, y_bottom = 0, 0
     pygame.mixer.music.play()
     
+    dialogues_main_story = [
+            init_story_character("Bá Duy", ba_duy_image, "Ê game chạy nhanh hơn thì phải nè"), # first_time_playing_normal = True
+    init_story_character("Bá Duy", ba_duy_image, f"Nhanh hơn tức là cơ hội đến sớm hơn để đạt {hard_mode_score_requirement} điểm đó cưng"),
+    init_story_character("Bá Duy", ba_duy_image, f"Rồi chơi tới luôn. Lấy cái {hard_mode_score_requirement} điểm cho anh đi"),
+    ]
+
+    dialogues = []
+
+    if first_time_playing_normal:
+        dialogues = dialogues_main_story
+        first_time_playing_normal = False
+    
+    # Chỉ số hội thoại hiện tại
+    is_there_dialogue = len(dialogues) > 0
+    if is_there_dialogue:
+        dialogue_index = 0
+        text_full = dialogues[dialogue_index].dialogue  # Toàn bộ câu cần hiển thị
+        char_index = 0  # Chỉ số ký tự hiện tại
+        last_update = pygame.time.get_ticks()
+        dialogue_done_time = None  # Biến lưu thời gian hoàn thành hội thoại
+
     while True:
         game_speed = update_game_speed() # Tặng tốc game dần theo score
 
@@ -489,6 +568,32 @@ def game_playing_normal():
 
         draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
 
+        # HIỆN THỊ HỘP THOẠI
+        current_time = pygame.time.get_ticks()
+        # Nếu chữ đã hiển thị hết, bắt đầu đếm thời gian trước khi chuyển tiếp
+        if is_there_dialogue:
+            if char_index == len(text_full) and dialogue_done_time is None:
+                dialogue_done_time = current_time  # Lưu thời gian hoàn tất hội thoại
+
+            # Sau khi hiện xong, chờ một lúc rồi chuyển tiếp hội thoại
+            if dialogue_done_time and current_time - dialogue_done_time > DIALOGUE_DELAY:
+                if dialogue_index < len(dialogues) - 1:
+                    dialogue_index += 1
+                    text_full = dialogues[dialogue_index].dialogue
+                    char_index = 0
+                    dialogue_done_time = None  # Reset thời gian hoàn thành hội thoại
+                else:
+                    is_there_dialogue = False
+
+            if char_index < len(text_full) and current_time - last_update > TEXT_SPEED:
+                char_index += 1
+                last_update = current_time
+                dialogues[dialogue_index].dialogue = text_full[:char_index]
+            
+            # hiển thị hội thoại
+            if is_there_dialogue:
+                draw_dialogue_box(dialogues[dialogue_index])
+
         for event in pygame.event.get(): # CHECK THAO TÁC
             if event.type == pygame.QUIT:
                 return ""
@@ -518,11 +623,33 @@ def game_playing_normal():
         pygame.time.Clock().tick(FPS)
  
 def game_playing_hard():
-    global score, game_speed# liên kết score => cập nhật best_score
+    global score, game_speed, first_time_playing_hard, first_time_collecting_10_coins, first_time_collecting_20_coins, total_coins # liên kết score => cập nhật best_score
     y_top, y_bottom = 0, 0
     is_lack_of_coin = False
 
     pygame.mixer.music.play()
+
+    dialogues_first_time_playing_hard = [
+        init_story_character("Bá Duy", ba_duy_image, "Ê có mấy em bò ở dưới kìa ... HÚP LẸ"), # first_time_playing_hard = True
+        init_story_character("Bá Duy", ba_duy_image, "Bấm mũi tên xuống hoặc chuột phải để vét cạn"),
+        init_story_character("Bá Duy", ba_duy_image, "Anh vét 10 em bò rồi đấy, còn lại 10 em nữa nhường mấy đứa tất"),
+        init_story_character("Bá Duy", ba_duy_image, "Từ giờ trở đi chỉ có bò mới làm điểm tăng lên được"),
+    ]
+
+    dialogues = []
+
+    if first_time_playing_hard:
+        dialogues = dialogues_first_time_playing_hard
+        first_time_playing_hard = False
+
+    # Chỉ số hội thoại hiện tại
+    is_there_dialogue = len(dialogues) > 0
+    if is_there_dialogue:
+        dialogue_index = 0
+        text_full = dialogues[dialogue_index].dialogue  # Toàn bộ câu cần hiển thị
+        char_index = 0  # Chỉ số ký tự hiện tại
+        last_update = pygame.time.get_ticks()
+        dialogue_done_time = None  # Biến lưu thời gian hoàn thành hội thoại
 
     while True:
         game_speed = update_game_speed() # Tặng tốc game dần theo score
@@ -533,10 +660,6 @@ def game_playing_hard():
             
             if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
                 background.reset_position()
-
-        if score > hardcore_mode_score_requirement:
-            current_game_mode = "game_playing_hardcore"
-            return current_game_mode
 
         for obstacle in obstacle_list: # IN OBSTACLE
             obstacle.move()
@@ -560,8 +683,6 @@ def game_playing_hard():
                 return "game_over"
 
             if not obstacle.is_scored and is_A_to_the_left_of_B(obstacle.x, current_character.x): # CẬP NHẬT ĐIỂM
-                pygame.mixer.Sound.play(scoring_sound)
-                score += 1
                 obstacle.is_scored = True
 
         for ground in ground_list: # IN GROUND
@@ -592,12 +713,44 @@ def game_playing_hard():
                 the_coin_that_need_to_be_reset_position = coin
                 pygame.mixer.Sound.play(cow_sound)
                 score += 1
+                total_coins += 1
 
             if is_collided(coin.x, coin.y, coin.hitbox, current_character.x, current_character.y, current_character.hitbox):
                 current_character.die()
                 return "game_over"
 
         draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
+
+        if total_coins >= 1 and first_time_collecting_10_coins:
+            return "second_conversation"
+        if total_coins >= 2 and first_time_collecting_20_coins:
+            return "third_conversation"
+
+        # HIỆN THỊ HỘP THOẠI
+        if is_there_dialogue:
+            current_time = pygame.time.get_ticks()
+            # Nếu chữ đã hiển thị hết, bắt đầu đếm thời gian trước khi chuyển tiếp
+            if char_index == len(text_full) and dialogue_done_time is None:
+                dialogue_done_time = current_time  # Lưu thời gian hoàn tất hội thoại
+
+            # Sau khi hiện xong, chờ một lúc rồi chuyển tiếp hội thoại
+            if dialogue_done_time and current_time - dialogue_done_time > DIALOGUE_DELAY:
+                if dialogue_index < len(dialogues) - 1:
+                    dialogue_index += 1
+                    text_full = dialogues[dialogue_index].dialogue
+                    char_index = 0
+                    dialogue_done_time = None  # Reset thời gian hoàn thành hội thoại
+                else:
+                    is_there_dialogue = False
+
+            if char_index < len(text_full) and current_time - last_update > TEXT_SPEED:
+                char_index += 1
+                last_update = current_time
+                dialogues[dialogue_index].dialogue = text_full[:char_index]
+            
+            # hiển thị hội thoại
+            if is_there_dialogue:
+                draw_dialogue_box(dialogues[dialogue_index])
 
         for event in pygame.event.get(): # CHECK THAO TÁC
             if event.type == pygame.QUIT:
@@ -627,73 +780,41 @@ def game_playing_hard():
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
         pygame.time.Clock().tick(FPS)
 
-def game_playing_hardcore():
-    global number_of_coin, score, is_collecting, is_lack_of_coin # liên kết score => cập nhật best_score
-
-    current_character = init_character(char_perry_plane_normal_image, char_perry_plane_normal_image, char_perry_plane_normal_image, char_perry_plane_normal_image)
-    twin_towers = obstacle(twin_towers_image, x_first_spawn, 0, 0, 0, obstacle_velocity_x)
-
-    while True:
-        for background in background_list: # IN BACKGROUND
-            background.move()
-            background.print_image(screen)
-            
-            if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
-                background.reset_position()
-
-        twin_towers.move()
-        twin_towers.print_image(screen)
-
-        if is_collided(current_character.x, current_character.y, current_character.hitbox, twin_towers.x, twin_towers.y, twin_towers.hitbox): # Game over nếu có va chạm
-                current_character.die()
-                pygame.mixer.Sound.play(plane_sound)
-                return "game_over"
-
-        for ground in ground_list: # IN GROUND
-            ground.move()
-            ground.print_image(screen)
-            
-            if ground.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ngoài map
-                ground.reset_position()
-
-        if current_character.is_collided_with_the_map(False, False, True, True): # CHECK GAME OVER KHI CHIM BAY NGOÀI MAP
-            current_character.die()
-            return "game_over"
-
-        current_character.print_image(screen) # IN CHARACTER
-
-        for event in pygame.event.get(): # CHECK THAO TÁC
-            if event.type == pygame.QUIT:
-                return ""
-            
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    return ""
-                
-        pygame.display.flip() # CẬP NHẬT MÀN HÌNH
-        pygame.time.Clock().tick(FPS)
-
 def game_menu():
-    global score, game_speed, is_collecting, is_lack_of_coin, current_game_mode
-    is_lack_of_coin = False
+    global score, game_speed, current_game_mode, first_time_playing_easy
 
     init_obj(ground_list, obstacle_list, coin_list, background_list)
     current_character.reset_position()
     
-    hint = random.choice(RANDOM_HINT)
-
-    if current_game_mode == "game_playing_hardcore":
-        current_game_mode = "game_playing_easy"
-    elif score >= hardcore_mode_score_requirement:
-        return "game_playing_hardcore"
-    elif current_game_mode == "game_playing_easy" and score >= normal_mode_score_requirement: # tăng độ khó khi đạt đủ score
-        current_game_mode = "game_playing_normal"
-        hint = "score 50 for cow girls"
-    elif current_game_mode == "game_playing_normal" and score >= hard_mode_score_requirement:
-        current_game_mode = "game_playing_hard"
-
     score = 0 # reset score
-    game_speed = min_game_speed
+    game_speed = min_game_speed # reset speed
+
+    dialogues_main_story = [
+        init_story_character("Bá Duy", ba_duy_image, "Đạt 10 điểm xem trình cái nào?"),
+    ]
+    
+    dialogues_chicken = [
+        init_story_character("Bá Duy", ba_duy_image, "Gà thế!"),
+        init_story_character("Bá Duy", ba_duy_image, "Có cái UFO cũng không lái được thì sao lái mấy em đây?"),
+        init_story_character("Bá Duy", ba_duy_image, "Nhìn mà chán"),
+        init_story_character("Bá Duy", ba_duy_image, "Ủa thứ Tư này có đá banh không mấy đứa?"),
+        init_story_character("Bá Duy", ba_duy_image, "Skibidi dop dop dop yes yes"),
+    ]
+
+    dialogues = []
+
+    if first_time_playing_easy:
+        dialogues = dialogues_main_story
+        first_time_playing_easy = False
+    else:
+        dialogues = dialogues_chicken
+
+    # Chỉ số hội thoại hiện tại
+    dialogue_index = 0
+    text_full = dialogues[dialogue_index].dialogue  # Toàn bộ câu cần hiển thị
+    char_index = 0  # Chỉ số ký tự hiện tại
+    last_update = pygame.time.get_ticks()
+    dialogue_done_time = None  # Biến lưu thời gian hoàn thành hội thoại
 
     while True:
         for background in background_list: # IN BACKGROUND
@@ -715,8 +836,30 @@ def game_menu():
         current_character.print_image(screen) # IN CHARACTER
 
         draw_text("FLAPPY BIRD", FONT["MARIO_BIG"], COLOR["BROWN"], WIDTH // 2, HEIGHT // 2 - 100) # IN CHỮ Ở MENU
-        draw_text("PRESS SPACE TO PLAY", FONT["MARIO_SMALL"], COLOR["MIDNIGHT_BLUE"], WIDTH // 2, HEIGHT // 2 + 100)
-        draw_text(hint, FONT["MARIO_SMALL"], COLOR["MIDNIGHT_BLUE"], WIDTH // 2, HEIGHT // 2 + 150)
+        # draw_text("PRESS SPACE TO PLAY", FONT["MARIO_SMALL"], COLOR["MIDNIGHT_BLUE"], WIDTH // 2, HEIGHT // 2 + 100)
+        # draw_text(hint, FONT["MARIO_SMALL"], COLOR["MIDNIGHT_BLUE"], WIDTH // 2, HEIGHT // 2 + 150)
+
+        # HIỆN THỊ HỘP THOẠI
+        current_time = pygame.time.get_ticks()
+        # Nếu chữ đã hiển thị hết, bắt đầu đếm thời gian trước khi chuyển tiếp
+        if char_index == len(text_full) and dialogue_done_time is None:
+            dialogue_done_time = current_time  # Lưu thời gian hoàn tất hội thoại
+
+        # Sau khi hiện xong, chờ một lúc rồi chuyển tiếp hội thoại
+        if dialogue_done_time and current_time - dialogue_done_time > DIALOGUE_DELAY:
+            if dialogue_index < len(dialogues) - 1:
+                dialogue_index += 1
+                text_full = dialogues[dialogue_index].dialogue
+                char_index = 0
+                dialogue_done_time = None  # Reset thời gian hoàn thành hội thoại
+
+        if char_index < len(text_full) and current_time - last_update > TEXT_SPEED:
+            char_index += 1
+            last_update = current_time
+            dialogues[dialogue_index].dialogue = text_full[:char_index]
+        
+        # hiển thị hội thoại
+        draw_dialogue_box(dialogues[dialogue_index])
 
         for event in pygame.event.get(): # CHECK THAO TÁC
             if event.type == pygame.QUIT:
@@ -724,42 +867,38 @@ def game_menu():
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # chuột trái
-                    is_collecting = False
                     current_character.jump()
+
                 elif event.button == 3: # chuột phải
-                    is_collecting = True
+                    if not current_character.is_collecting:
+                        current_character.is_collecting = True
+                        pygame.mixer.Sound.play(collecting_sound)
+
                 return current_game_mode
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return ""
-                elif event.key == pygame.K_1:
-                    score = 100
+                
                 elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
-                    is_collecting = False
                     current_character.jump()
+
                 elif event.key == pygame.K_DOWN:
-                    is_collecting = True
-                    pygame.mixer.Sound.play(collecting_sound)
+                    if not current_character.is_collecting:
+                        current_character.is_collecting = True
+                        pygame.mixer.Sound.play(collecting_sound)
+
                 return current_game_mode
-
-            elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_DOWN:
-                    is_collecting = False
-
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 3:
-                    is_collecting = False
 
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
         pygame.time.Clock().tick(FPS)
 
 def game_over():
-    global best_score, score, game_speed, current_character # liên kết score => cập nhật best_score; game_speed
+    global score, game_speed, best_score # liên kết score => cập nhật best_score; game_speed
     best_score = max(score, best_score)
 
-    pygame.mixer.Sound.play(game_over_sound)
-    pygame.mixer.music.fadeout(2000)
+    pygame.mixer.Sound.play(game_over_sound) # Âm thanh game over
+    pygame.mixer.music.fadeout(2000) # tắt nhạc nền
 
     while True:
         for background in background_list: # IN BACKGROUND
@@ -771,10 +910,10 @@ def game_over():
         for ground in ground_list: # IN GROUND
             ground.print_image(screen)
 
-        current_character.move() # Cập nhật vị trí
+        current_character.move() # Cập nhật vị trí nhân vật
         current_character.print_image(screen) # IN CHARACTER
 
-        menu_game_over.print_image(screen)
+        menu_game_over.print_image(screen) # IN MENU GAME OVER
         draw_text(f"{score}", FONT["MARIO_BIG"],  COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 - 40)
         draw_text(f"{best_score}", FONT["MARIO_BIG"],  COLOR["BRONZE"], WIDTH // 2, HEIGHT // 2 + 70)
 
@@ -792,7 +931,322 @@ def game_over():
         pygame.display.flip() # CẬP NHẬT MÀN HÌNH
         pygame.time.Clock().tick(FPS)
 
+def first_conversation():
+    global score, game_speed
+
+    init_obj(ground_list, obstacle_list, coin_list, background_list)
+    current_character.reset_position()
+    
+    score = 0 # reset score
+    game_speed = min_game_speed # reset speed
+
+    dialogues = [
+        init_story_character("Bá Duy", ba_duy_image, "Hello mấy đứa!"),
+        init_story_character("Bá Duy", ba_duy_image, "Nhân dịp thầy Hùng tặng 20 triệu cái laptop"),
+        init_story_character("Bá Duy", ba_duy_image, "Thầy cũng đem theo con hàng 43 cái ufo sang xịn mịn"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Chào các anh các chị"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Tôi chỉ hướng dẫn sơ qua thôi"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "À thôi"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Cái game Flappy Bird này ai mà chả biết"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Tôi bảo rồi ... tự học là tốt nhất!"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Bây giờ thầy Duy sẽ quản lớp"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Tôi bận dẫn quân KHTN đi ICPC rồi"),
+        init_story_character("Bá Duy", ba_duy_image, "ủa thầy đi rồi à?"),
+        init_story_character("Bá Duy", ba_duy_image, "Vậy thì ... vô game nè!"),
+    ]
+
+    # Chỉ số hội thoại hiện tại
+    dialogue_index = 0
+    text_full = dialogues[dialogue_index].dialogue  # Toàn bộ câu cần hiển thị
+    char_index = 0  # Chỉ số ký tự hiện tại
+    last_update = pygame.time.get_ticks()
+    dialogue_done_time = None  # Biến lưu thời gian hoàn thành hội thoại
+
+    while True:
+        for background in background_list: # IN BACKGROUND
+            background.move() 
+            background.print_image(screen)
+            
+            if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
+                background.reset_position()
+
+        for ground in ground_list: # IN GROUND
+            ground.move()
+            ground.print_image(screen)
+            
+            if ground.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ngoài map
+                ground.reset_position()
+
+        current_time = pygame.time.get_ticks()
+        # Nếu chữ đã hiển thị hết, bắt đầu đếm thời gian trước khi chuyển tiếp
+        if char_index == len(text_full) and dialogue_done_time is None:
+            dialogue_done_time = current_time  # Lưu thời gian hoàn tất hội thoại
+
+        # Sau khi hiện xong, chờ một lúc rồi chuyển tiếp hội thoại
+        if dialogue_done_time and current_time - dialogue_done_time > DIALOGUE_DELAY:
+            if dialogue_index < len(dialogues) - 1:
+                dialogue_index += 1
+                text_full = dialogues[dialogue_index].dialogue
+                char_index = 0
+                dialogue_done_time = None  # Reset thời gian hoàn thành hội thoại
+            else:
+                return "game_menu"
+
+        if char_index < len(text_full) and current_time - last_update > TEXT_SPEED:
+            char_index += 1
+            last_update = current_time
+            dialogues[dialogue_index].dialogue = text_full[:char_index]
+        
+        # hiển thị hội thoại
+        draw_dialogue_box(dialogues[dialogue_index])
+
+        for event in pygame.event.get(): # CHECK THAO TÁC
+            if event.type == pygame.QUIT:
+                return ""
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return ""
+                if event.key == pygame.K_SPACE:
+                    if char_index < len(text_full):
+                        char_index = len(text_full)
+                        dialogues[dialogue_index].dialogue = text_full[:char_index]
+                    else:
+                        if dialogue_index < len(dialogues) - 1:
+                            dialogue_index += 1
+                            text_full = dialogues[dialogue_index].dialogue
+                            char_index = 0
+                            dialogue_done_time = None
+                        else:
+                            return "game_menu"
+        pygame.display.flip() # CẬP NHẬT MÀN HÌNH
+        pygame.time.Clock().tick(FPS)
+
+def second_conversation():
+    global score, game_speed, first_time_collecting_10_coins
+    first_time_collecting_10_coins = False
+
+    init_obj(ground_list, obstacle_list, coin_list, background_list)
+    current_character.reset_position()
+    
+    score = 0 # reset score
+    game_speed = min_game_speed # reset speed
+
+    pygame.mixer.Sound.play(bomb_sound)
+
+    dialogues = [
+        init_story_character("???", char_perry_ufo_normal_image, "Bỗng có tiếng động lạ"), # first_time_collecting_10_coins = True
+        init_story_character("Bá Duy", ba_duy_image, "Cái gì mà to chà bá vậy!?"),
+        init_story_character("Bá Duy", ba_duy_image, "Ủa khoan ... đó là thầy Hùng mà!!!"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Mấy đứa ơi, thầy bị Đỗ Phú Quí, J97, Đàm Vĩnh Hưng tấn công ..."),
+        init_story_character("J97", j97_image, "Haha hahahahhahah *cười kiểu Bến Tre lạnh lùng*", FONT["MONTESRRAT_ITALIC"]),
+        init_story_character("J97", j97_image, "Các ngươi hãy đầu hàng trước-"),
+        init_story_character("Đỗ Phú Quí", do_phu_qui_image, "PICKLEBALL!!!"),
+        init_story_character("Đàm Vĩnh Hưng", dam_vinh_hung_image, "Thầy Hùng của các ngươi quá vip pro đỉnh móc kịch trần, đang dần tranh ánh hào quang của bọn ta!"),
+        init_story_character("Đàm Vĩnh Hưng", dam_vinh_hung_image, "Nhưng điều đó không thể thành hiện thực được đâu!!!"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Thầy có để lại cho mấy đứa chiếc Boeing 767 ở sân trường ..."),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Mấy đứa hãy dùng nó mà chống lại kẻ ác"),
+        init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "..."),
+        init_story_character("Bá Duy", ba_duy_image, "THẦY HÙNG !!??"),
+        init_story_character("???", char_perry_ufo_normal_image, "Trước khi biến mất, thầy Hùng có chỉ vào toà tháp đôi ở New York"),
+        init_story_character("???", char_perry_ufo_normal_image, "... Những con người này đang tổ chức off fan ở đó!!!"),
+        init_story_character("Bá Duy", ba_duy_image, "Này mấy đứa, không có thời gian để khóc lóc đâu"),
+        init_story_character("Bá Duy", ba_duy_image, "Hãy cùng nhau bay lên và đánh bại chúng"),
+        init_story_character("Bá Duy", ba_duy_image, "Nhưng mà có vẻ máy bay thiếu nhiên liệu"),
+        init_story_character("Bá Duy", ba_duy_image, "À anh biết rồi! Loại máy bay này dùng sữa làm nhiên liệu"),
+        init_story_character("Bá Duy", ba_duy_image, "Chúng ta cần vét thêm 10 em nữa"),
+    ]
+
+    # Chỉ số hội thoại hiện tại
+    dialogue_index = 0
+    text_full = dialogues[dialogue_index].dialogue  # Toàn bộ câu cần hiển thị
+    char_index = 0  # Chỉ số ký tự hiện tại
+    last_update = pygame.time.get_ticks()
+    dialogue_done_time = None  # Biến lưu thời gian hoàn thành hội thoại
+
+    while True:
+        for background in background_list: # IN BACKGROUND
+            background.move()
+            background.print_image(screen)
+            
+            if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
+                background.reset_position()
+
+        for obstacle in obstacle_list: # IN OBSTACLE
+            obstacle.move()
+            obstacle.print_image(screen)
+            
+            if is_collided(current_character.x, current_character.y, current_character.hitbox, obstacle.x, obstacle.y, obstacle.hitbox): # Game over nếu có va chạm
+                current_character.die()
+                return "game_over"
+
+            if not obstacle.is_scored and is_A_to_the_left_of_B(obstacle.x, current_character.x): # CẬP NHẬT ĐIỂM
+                pygame.mixer.Sound.play(scoring_sound)
+                score += 1
+                obstacle.is_scored = True
+
+        for ground in ground_list: # IN GROUND
+            ground.move()
+            ground.print_image(screen)
+            
+            if ground.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ngoài map
+                ground.reset_position()
+
+        if current_character.is_collided_with_the_map(False, False, True, True): # CHECK GAME OVER KHI CHIM BAY NGOÀI MAP
+            current_character.die()
+            return "game_over"
+       
+        current_character.print_image(screen) # IN CHARACTER
+
+        for coin in coin_list:
+            coin.move()
+            coin.print_image(screen)
+                
+            if current_character.is_shoting() and not coin.is_scored and is_collided(coin.x, coin.y, coin.hitbox, current_character.x, current_character.y, current_character.collecting_range):
+                coin.is_scored = True
+                is_lack_of_coin = True
+                the_coin_that_need_to_be_reset_position = coin
+                pygame.mixer.Sound.play(cow_sound)
+                score += 1
+
+            if is_collided(coin.x, coin.y, coin.hitbox, current_character.x, current_character.y, current_character.hitbox):
+                current_character.die()
+                return "game_over"
+
+        draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
+
+        current_time = pygame.time.get_ticks()
+        # Nếu chữ đã hiển thị hết, bắt đầu đếm thời gian trước khi chuyển tiếp
+        if char_index == len(text_full) and dialogue_done_time is None:
+            dialogue_done_time = current_time  # Lưu thời gian hoàn tất hội thoại
+
+        # Sau khi hiện xong, chờ một lúc rồi chuyển tiếp hội thoại
+        if dialogue_done_time and current_time - dialogue_done_time > DIALOGUE_DELAY:
+            if dialogue_index < len(dialogues) - 1:
+                dialogue_index += 1
+                text_full = dialogues[dialogue_index].dialogue
+                char_index = 0
+                dialogue_done_time = None  # Reset thời gian hoàn thành hội thoại
+            else:
+                return "game_menu"
+
+        if char_index < len(text_full) and current_time - last_update > TEXT_SPEED:
+            char_index += 1
+            last_update = current_time
+            dialogues[dialogue_index].dialogue = text_full[:char_index]
+        
+        # hiển thị hội thoại
+        draw_dialogue_box(dialogues[dialogue_index])
+
+        for event in pygame.event.get(): # CHECK THAO TÁC
+            if event.type == pygame.QUIT:
+                return ""
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return ""
+                if event.key == pygame.K_SPACE:
+                    if char_index < len(text_full):
+                        char_index = len(text_full)
+                        dialogues[dialogue_index].dialogue = text_full[:char_index]
+                    else:
+                        if dialogue_index < len(dialogues) - 1:
+                            dialogue_index += 1
+                            text_full = dialogues[dialogue_index].dialogue
+                            char_index = 0
+                            dialogue_done_time = None
+                        else:
+                            return "game_menu"
+        pygame.display.flip() # CẬP NHẬT MÀN HÌNH
+        pygame.time.Clock().tick(FPS)
+
+def third_conversation():
+    global number_of_coin, score, is_collecting, is_lack_of_coin # liên kết score => cập nhật best_score
+
+    current_character = frontground(char_perry_plane_normal_image, character_x, character_y, character_width, character_height, 0, 0)
+    twin_towers = obstacle(twin_towers_image, x_first_spawn, 0, 0, 0, obstacle_velocity_x)
+
+    dialogues = [
+        init_story_character("Bá Duy", ba_duy_image, "VÌ NGUYỄN THANH HÙNG !!!")
+    ]
+
+    # Chỉ số hội thoại hiện tại
+    dialogue_index = 0
+    text_full = dialogues[dialogue_index].dialogue  # Toàn bộ câu cần hiển thị
+    char_index = 0  # Chỉ số ký tự hiện tại
+    last_update = pygame.time.get_ticks()
+    dialogue_done_time = None  # Biến lưu thời gian hoàn thành hội thoại
+
+    while True:
+        for background in background_list: # IN BACKGROUND
+            background.move()
+            background.print_image(screen)
+            
+            if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
+                background.reset_position()
+
+        twin_towers.move()
+        twin_towers.print_image(screen)
+
+        if is_collided(current_character.x, current_character.y, current_character.hitbox, twin_towers.x, twin_towers.y, twin_towers.hitbox): # Game over nếu có va chạm
+                pygame.mixer.Sound.play(plane_sound)
+                return "game_over"
+
+        for ground in ground_list: # IN GROUND
+            ground.move()
+            ground.print_image(screen)
+            
+            if ground.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ngoài map
+                ground.reset_position()
+
+        if current_character.is_collided_with_the_map(False, False, True, True): # CHECK GAME OVER KHI CHIM BAY NGOÀI MAP
+            return "game_over"
+
+        current_character.print_image(screen) # IN CHARACTER
+
+        current_time = pygame.time.get_ticks()
+        # Nếu chữ đã hiển thị hết, bắt đầu đếm thời gian trước khi chuyển tiếp
+        if char_index == len(text_full) and dialogue_done_time is None:
+            dialogue_done_time = current_time  # Lưu thời gian hoàn tất hội thoại
+
+        # Sau khi hiện xong, chờ một lúc rồi chuyển tiếp hội thoại
+        if dialogue_done_time and current_time - dialogue_done_time > DIALOGUE_DELAY:
+            if dialogue_index < len(dialogues) - 1:
+                dialogue_index += 1
+                text_full = dialogues[dialogue_index].dialogue
+                char_index = 0
+                dialogue_done_time = None  # Reset thời gian hoàn thành hội thoại
+            else:
+                return "game_menu"
+
+        if char_index < len(text_full) and current_time - last_update > TEXT_SPEED:
+            char_index += 1
+            last_update = current_time
+            dialogues[dialogue_index].dialogue = text_full[:char_index]
+        
+        # hiển thị hội thoại
+        draw_dialogue_box(dialogues[dialogue_index])
+
+        for event in pygame.event.get(): # CHECK THAO TÁC
+            if event.type == pygame.QUIT:
+                return ""
+            
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return ""
+                
+        pygame.display.flip() # CẬP NHẬT MÀN HÌNH
+        pygame.time.Clock().tick(FPS)
+
 '''DƯỚI ĐÂY LÀ CÁC THÔNG SỐ CÓ THỂ ĐƯỢC TUỲ CHỈNH SAO CHO PHÙ HỢP VỚI NGƯỜI CHƠI'''
+
+# ĐIỂM SỐ GIỮA CÁC MODE
+normal_mode_score_requirement = 15
+hard_mode_score_requirement = 30
+
+# THÔNG SỐ HỘI THOẠI
+
+# Tốc độ hiển thị chữ (miligiây trên mỗi ký tự)
+TEXT_SPEED = 50  # 50ms mỗi ký tự
+DIALOGUE_DELAY = 2000  # 2 giây trước khi chuyển sang câu tiếp theo
 
 # miliseconds per frame
 miliseconds_per_frame = 1000 / FPS
@@ -805,6 +1259,55 @@ sexy_girl = background(sexy_girl_image, 0, 0, WIDTH, HEIGHT, 0, 0)
 
 # Menu
 menu_game_over = background(menu_game_over_image, 0, 0, WIDTH, HEIGHT)
+
+
+# TẠO NHÂN VẬT CỐT TRUYỆN
+dialogue_box_x = 50
+dialogue_box_y = 400
+dialogue_box_width = WIDTH - dialogue_box_x * 2
+dialogue_box_height = HEIGHT - dialogue_box_y - dialogue_box_x
+dialogue_x = dialogue_box_x + 10
+dialogue_y = dialogue_box_y + 10
+dialogue_max_width = dialogue_box_width - 20
+story_character_width = 100
+story_character_height = story_character_width * 275 / 183
+story_character_x = dialogue_box_x + dialogue_box_width - story_character_width
+story_character_y = dialogue_box_y - story_character_height + 5
+
+# STORY_LINE
+first_time_playing_easy = True
+first_time_playing_normal = True
+first_time_playing_hard = True
+first_time_collecting_10_coins = True
+first_time_collecting_20_coins = True
+
+story_line = [
+    init_story_character("Bá Duy", ba_duy_image, "Đạt thử 10 điểm xem trình cái nào?"), # first_time_playing_easy = True
+
+    init_story_character("Bá Duy", ba_duy_image, "Ê game chạy nhanh hơn thì phải nè"), # first_time_playing_normal = True
+    init_story_character("Bá Duy", ba_duy_image, f"Nhanh hơn tức là cơ hội đến sớm hơn để đạt {hard_mode_score_requirement} điểm đó cưng"),
+    init_story_character("Bá Duy", ba_duy_image, f"Rồi chơi tới luôn. Lấy cái {hard_mode_score_requirement} điểm cho anh đi"),
+
+    init_story_character("Bá Duy", ba_duy_image, "Ê có mấy em bò ở dưới kìa ... HÚP LẸ"), # first_time_playing_hard = True
+    init_story_character("Bá Duy", ba_duy_image, "Bấm mũi tên xuống hoặc chuột phải để vét cạn"),
+    init_story_character("Bá Duy", ba_duy_image, "Anh vét 10 em bò rồi đấy, còn lại 10 em nữa nhường mấy đứa tất"),
+
+    init_story_character("???", char_perry_ufo_normal_image, "Bỗng có tiếng động lạ"), # first_time_collecting_10_coins = True
+    init_story_character("Bá Duy", ba_duy_image, "Cái gì mà to chà bá vậy!?"),
+    init_story_character("Bá Duy", ba_duy_image, "Ủa khoan ... đó là thầy Hùng mà!!!"),
+    init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Mấy đứa ơi, thầy bị Đỗ Phú Quí, J97, Đàm Vĩnh Hưng tấn công ..."),
+    init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Thầy có để lại cho mấy đứa chiếc Boeing 767 ở sân trường ..."),
+    init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Mấy đứa hãy dùng nó mà chống lại kẻ ác"),
+    init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "..."),
+    init_story_character("Bá Duy", ba_duy_image, "THẦY HÙNG !!??"),
+    init_story_character("???", char_perry_ufo_normal_image, "Trước khi biến mất, thầy Hùng có chỉ vào toà tháp đôi ở New York"),
+    init_story_character("???", char_perry_ufo_normal_image, "... Những con người này đang tổ chức off fan ở đó!!!"),
+    init_story_character("Bá Duy", ba_duy_image, "Này mấy đứa, không có thời gian để khóc lóc đâu"),
+    init_story_character("Bá Duy", ba_duy_image, "Hãy cùng nhau bay lên và đánh bại chúng"),
+    init_story_character("Bá Duy", ba_duy_image, "Nhưng mà có vẻ máy bay thiếu nhiên liệu"),
+    init_story_character("Bá Duy", ba_duy_image, "À anh biết rồi! Loại máy bay này dùng sữa làm nhiên liệu"),
+    init_story_character("Bá Duy", ba_duy_image, "Chúng ta cần vét thêm 10 em nữa"),
+]
 
 # THÔNG SỐ NHÂN VẬT
 character_width = 50
@@ -869,11 +1372,7 @@ game_speed_accel = (max_game_speed - min_game_speed) / score_at_max_game_speed #
 # SCORES
 score = 0
 best_score = 0
-
-# ĐIỂM SỐ GIỮA CÁC MODE
-normal_mode_score_requirement = 1
-hard_mode_score_requirement = 2
-hardcore_mode_score_requirement = 119
+total_coins = 0
 
 RANDOM_HINT = [
     "Press down-but to have a long dic-",
@@ -891,12 +1390,14 @@ states = {
     "game_playing_hard": game_playing_hard,
     "game_playing_normal": game_playing_normal,
     "game_playing_easy": game_playing_easy,
-    "game_playing_hardcore": game_playing_hardcore,
+    "first_conversation": first_conversation,
+    "second_conversation": second_conversation,
+    "third_conversation": third_conversation,
     "game_over": game_over
 }
 
 # VÒNG LẶP CHÍNH CỦA GAME
-current_state = "game_menu"
+current_state = "first_conversation"
 current_game_mode = "game_playing_easy"
 while current_state:
     current_state = states[current_state]()
