@@ -1027,30 +1027,28 @@ def second_conversation():
 
     init_obj(ground_list, obstacle_list, coin_list, background_list)
     current_character.reset_position()
-    
-    score = 0 # reset score
-    game_speed = min_game_speed # reset speed
+
+    game_speed = min_game_speed
 
     pygame.mixer.Sound.play(bomb_sound)
 
     dialogues = [
-        init_story_character("???", char_perry_ufo_normal_image, "Bỗng có tiếng động lạ"), # first_time_collecting_10_coins = True
-        init_story_character("Bá Duy", ba_duy_image, "Cái gì mà to chà bá vậy!?"),
-        init_story_character("Bá Duy", ba_duy_image, "Ủa khoan ... đó là thầy Hùng mà!!!"),
+        init_story_character("Đỗ Phú Quí", do_phu_qui_image, "Lô mấy nhóc"),
+        init_story_character("Bá Duy", ba_duy_image, "Ai đó?"),
+        init_story_character("Bá Duy", ba_duy_image, "Ủa khoan ... hình như kế bên kia ... là thầy Hùng mà!!!"),
         init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Mấy đứa ơi, thầy bị Đỗ Phú Quí, J97, Đàm Vĩnh Hưng tấn công ..."),
         init_story_character("J97", j97_image, "Haha hahahahhahah *cười kiểu Bến Tre lạnh lùng*", FONT["MONTESRRAT_ITALIC"]),
         init_story_character("J97", j97_image, "Các ngươi hãy đầu hàng trước-"),
         init_story_character("Đỗ Phú Quí", do_phu_qui_image, "PICKLEBALL!!!"),
         init_story_character("Đàm Vĩnh Hưng", dam_vinh_hung_image, "Thầy Hùng của các ngươi quá vip pro đỉnh móc kịch trần, đang dần tranh ánh hào quang của bọn ta!"),
         init_story_character("Đàm Vĩnh Hưng", dam_vinh_hung_image, "Nhưng điều đó không thể thành hiện thực được đâu!!!"),
+        init_story_character("Đàm Vĩnh Hưng", dam_vinh_hung_image, "Bởi vì ... chúng ta đã có ... một buổi đại off fan ở toà tháp đôi ở New York!!!"),
         init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Thầy có để lại cho mấy đứa chiếc Boeing 767 ở sân trường ..."),
         init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "Mấy đứa hãy dùng nó mà chống lại kẻ ác"),
         init_story_character("Nguyễn Thanh Hùng", nguyen_thanh_hung_image, "..."),
         init_story_character("Bá Duy", ba_duy_image, "THẦY HÙNG !!??"),
-        init_story_character("???", char_perry_ufo_normal_image, "Trước khi biến mất, thầy Hùng có chỉ vào toà tháp đôi ở New York"),
-        init_story_character("???", char_perry_ufo_normal_image, "... Những con người này đang tổ chức off fan ở đó!!!"),
         init_story_character("Bá Duy", ba_duy_image, "Này mấy đứa, không có thời gian để khóc lóc đâu"),
-        init_story_character("Bá Duy", ba_duy_image, "Hãy cùng nhau bay lên và đánh bại chúng"),
+        init_story_character("Bá Duy", ba_duy_image, "Hãy cùng nhau lên đỉnh và đánh bại chúng"),
         init_story_character("Bá Duy", ba_duy_image, "Nhưng mà có vẻ máy bay thiếu nhiên liệu"),
         init_story_character("Bá Duy", ba_duy_image, "À anh biết rồi! Loại máy bay này dùng sữa làm nhiên liệu"),
         init_story_character("Bá Duy", ba_duy_image, "Chúng ta cần vét thêm 10 em nữa"),
@@ -1071,19 +1069,6 @@ def second_conversation():
             if background.is_out_of_the_map(False, True, False, False): # Reset vị trí nếu ra ngoài map
                 background.reset_position()
 
-        for obstacle in obstacle_list: # IN OBSTACLE
-            obstacle.move()
-            obstacle.print_image(screen)
-            
-            if is_collided(current_character.x, current_character.y, current_character.hitbox, obstacle.x, obstacle.y, obstacle.hitbox): # Game over nếu có va chạm
-                current_character.die()
-                return "game_over"
-
-            if not obstacle.is_scored and is_A_to_the_left_of_B(obstacle.x, current_character.x): # CẬP NHẬT ĐIỂM
-                pygame.mixer.Sound.play(scoring_sound)
-                score += 1
-                obstacle.is_scored = True
-
         for ground in ground_list: # IN GROUND
             ground.move()
             ground.print_image(screen)
@@ -1094,23 +1079,6 @@ def second_conversation():
         if current_character.is_collided_with_the_map(False, False, True, True): # CHECK GAME OVER KHI CHIM BAY NGOÀI MAP
             current_character.die()
             return "game_over"
-       
-        current_character.print_image(screen) # IN CHARACTER
-
-        for coin in coin_list:
-            coin.move()
-            coin.print_image(screen)
-                
-            if current_character.is_shoting() and not coin.is_scored and is_collided(coin.x, coin.y, coin.hitbox, current_character.x, current_character.y, current_character.collecting_range):
-                coin.is_scored = True
-                is_lack_of_coin = True
-                the_coin_that_need_to_be_reset_position = coin
-                pygame.mixer.Sound.play(cow_sound)
-                score += 1
-
-            if is_collided(coin.x, coin.y, coin.hitbox, current_character.x, current_character.y, current_character.hitbox):
-                current_character.die()
-                return "game_over"
 
         draw_text(str(score), FONT["MARIO_BIG"], COLOR["ROYAL_BLUE"], WIDTH // 2, HEIGHT // 2 - 100) # IN ĐIỂM
 
@@ -1259,7 +1227,6 @@ sexy_girl = background(sexy_girl_image, 0, 0, WIDTH, HEIGHT, 0, 0)
 
 # Menu
 menu_game_over = background(menu_game_over_image, 0, 0, WIDTH, HEIGHT)
-
 
 # TẠO NHÂN VẬT CỐT TRUYỆN
 dialogue_box_x = 50
